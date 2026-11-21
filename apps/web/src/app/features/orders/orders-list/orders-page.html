@@ -1,0 +1,157 @@
+<app-page-header
+  title="Orders"
+  subtitle="Provisioning orders across every account, newest first."
+/>
+
+<div class="app-filter-bar filters" role="search" aria-label="Filter orders">
+  <mat-chip-listbox
+    aria-label="Status"
+    [value]="statusFilter() ?? ''"
+    (change)="setStatus($event.value)"
+    hideSingleSelectionIndicator
+  >
+    <mat-chip-option value="">All</mat-chip-option>
+    @for (option of statusOptions; track option.value) {
+      <mat-chip-option [value]="option.value">{{ option.label }}</mat-chip-option>
+    }
+  </mat-chip-listbox>
+  <p class="app-result-count app-numeric" aria-live="polite">
+    @if (!orders.isFirstLoad() && !orders.error()) {
+      {{ resultCount() }}
+    }
+  </p>
+</div>
+
+@if (orders.error(); as error) {
+  <app-error-state heading="Could not load orders" [error]="error" (retry)="orders.retry()" />
+} @else if (orders.isFirstLoad()) {
+  <app-table-skeleton
+    class="app-table-card"
+    label="Loading orders"
+    [columns]="[3, 1.6, 1.1, 1, 0.9, 1.6, 0.9]"
+  />
+} @else if (rows().length === 0) {
+  @if (statusFilter()) {
+    <app-empty-state
+      icon="receipt_long"
+      heading="No orders with this status"
+      message="Pick another status, or show every order."
+    >
+      <button matButton="outlined" type="button" (click)="setStatus(null)">Show all orders</button>
+    </app-empty-state>
+  } @else {
+    <app-empty-state
+      icon="receipt_long"
+      heading="No orders yet"
+      message="Orders add, change or remove users. Start one from an account, or describe it to the assistant."
+    >
+      <a matButton="filled" routerLink="/assistant">
+        <mat-icon svgIcon="wand_stars" />
+        Open the assistant
+      </a>
+    </app-empty-state>
+  }
+} @else if (handset()) {
+  <ul class="app-card-list" aria-label="Orders">
+    @for (order of rows(); track order.id) {
+      @let p = progress(order);
+      <li class="app-card">
+        <div class="app-card-top">
+          <a
+            class="app-row-link app-card-title"
+            [routerLink]="['/accounts', order.accountId, 'orders', order.id]"
+            >{{ order.title }}</a
+          >
+          <app-status-chip [status]="order.status" />
+        </div>
+        <p class="card-meta">
+          {{ order.accountName }} ·
+          <span class="app-numeric">{{ p.done }}/{{ p.total }}</span> lines ·
+          {{ sourceLabel(order.source) }} ·
+          <app-relative-time [value]="order.updatedAt" />
+        </p>
+      </li>
+    }
+  </ul>
+} @else {
+  <div class="app-table-card">
+    <div class="app-table-scroll">
+      <table
+        mat-table
+        class="app-table"
+        aria-label="Orders"
+        [dataSource]="rows()"
+        [trackBy]="trackById"
+      >
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Order</th>
+          <td mat-cell *matCellDef="let order">
+            <a
+              class="app-row-link app-truncate"
+              [routerLink]="['/accounts', order.accountId, 'orders', order.id]"
+              [title]="order.title"
+              >{{ order.title }}</a
+            >
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="account">
+          <th mat-header-cell *matHeaderCellDef>Account</th>
+          <td mat-cell *matCellDef="let order">
+            <span class="app-truncate" [title]="order.accountName">{{ order.accountName }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let order"><app-status-chip [status]="order.status" /></td>
+        </ng-container>
+        <ng-container matColumnDef="progress">
+          <th mat-header-cell *matHeaderCellDef>Lines</th>
+          <td mat-cell *matCellDef="let order">
+            @let p = progress(order);
+            <span class="progress">
+              <span class="meter" aria-hidden="true">
+                <span class="ok" [style.width]="p.succeededWidth"></span>
+                <span class="bad" [style.width]="p.failedWidth"></span>
+              </span>
+              <span class="app-numeric">{{ p.done }}/{{ p.total }}</span>
+              @if (p.failed > 0) {
+                <span class="app-visually-hidden">, {{ p.failed }} failed</span>
+              }
+            </span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="source">
+          <th mat-header-cell *matHeaderCellDef>Source</th>
+          <td mat-cell *matCellDef="let order">{{ sourceLabel(order.source) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="submittedBy">
+          <th mat-header-cell *matHeaderCellDef>Submitted by</th>
+          <td mat-cell *matCellDef="let order">
+            <span class="app-truncate" [title]="order.submittedBy">{{ order.submittedBy }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="updated">
+          <th mat-header-cell *matHeaderCellDef class="app-align-end">Updated</th>
+          <td mat-cell *matCellDef="let order" class="app-align-end app-muted">
+            <app-relative-time [value]="order.updatedAt" />
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let order; columns: columns"></tr>
+      </table>
+    </div>
+  </div>
+}
+
+@if (orders.hasMore() || orders.loadMoreError()) {
+  <app-load-more
+    noun="orders"
+    [shown]="orders.items().length"
+    [hasMore]="orders.hasMore()"
+    [loading]="orders.isLoadingMore()"
+    [error]="orders.loadMoreError()"
+    (loadMore)="orders.loadMore()"
+    (retry)="orders.retry()"
+  />
+}
