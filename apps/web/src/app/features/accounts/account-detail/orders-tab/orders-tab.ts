@@ -27,12 +27,14 @@ import { StatusChip } from '../../../../shared/ui/status-chip/status-chip';
 import { TableSkeleton } from '../../../../shared/ui/table-skeleton/table-skeleton';
 import { mergeLiveOrders, toOrderSummary } from '../../../orders/live-orders';
 import { AccountStore } from '../account-store';
+import { Truncate } from '../../../../shared/ui/truncate/truncate';
 
 const STATUSES = OrderStatus.options;
 
 @Component({
   selector: 'app-orders-tab',
   imports: [
+    Truncate,
     EmptyState,
     ErrorState,
     LoadMore,

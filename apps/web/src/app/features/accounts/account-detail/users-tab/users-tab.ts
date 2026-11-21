@@ -19,10 +19,12 @@ import { LoadMore } from '../../../../shared/ui/load-more/load-more';
 import { StatusChip } from '../../../../shared/ui/status-chip/status-chip';
 import { TableSkeleton } from '../../../../shared/ui/table-skeleton/table-skeleton';
 import { AccountStore } from '../account-store';
+import { Truncate } from '../../../../shared/ui/truncate/truncate';
 
 @Component({
   selector: 'app-users-tab',
   imports: [
+    Truncate,
     EmptyState,
     ErrorState,
     LoadMore,
