@@ -31,15 +31,16 @@ Both GSIs project all attributes. Every key is a string. Key builders live in
 
 ### Item types
 
-| Entity  | PK             | SK                           | GSI1PK / GSI1SK                              | GSI2PK / GSI2SK                 |
-| ------- | -------------- | ---------------------------- | -------------------------------------------- | ------------------------------- |
-| Account | `ACCOUNT#<id>` | `ACCOUNT`                    | `ACCOUNTS` / `<name>#<id>`                   |                                 |
-| Site    | `ACCOUNT#<id>` | `SITE#<siteId>`              |                                              |                                 |
-| User    | `ACCOUNT#<id>` | `USER#<userId>`              | `ACCOUNT#<id>#USERS` / `<last>#<first>#<id>` | `SITE#<siteId>#USERS` / same    |
-| Number  | `ACCOUNT#<id>` | `NUMBER#<e164>`              | `ACCOUNT#<id>#NUMBERS` / `<status>#<e164>`   | `SITE#<siteId>#NUMBERS` / same  |
-| Order   | `ACCOUNT#<id>` | `ORDER#<orderId>`            | `ORDERS` / `<orderId>`                       | `ORDERS#<status>` / `<orderId>` |
-| Guard   | `ACCOUNT#<id>` | `EMAIL#<email>`, `EXT#<ext>` |                                              |                                 |
-| Guard   | `MAC#<mac>`    | `MAC`                        |                                              |                                 |
+| Entity      | PK             | SK                           | GSI1PK / GSI1SK                              | GSI2PK / GSI2SK                 |
+| ----------- | -------------- | ---------------------------- | -------------------------------------------- | ------------------------------- |
+| Account     | `ACCOUNT#<id>` | `ACCOUNT`                    | `ACCOUNTS` / `<name>#<id>`                   |                                 |
+| Site        | `ACCOUNT#<id>` | `SITE#<siteId>`              |                                              |                                 |
+| User        | `ACCOUNT#<id>` | `USER#<userId>`              | `ACCOUNT#<id>#USERS` / `<last>#<first>#<id>` | `SITE#<siteId>#USERS` / same    |
+| Number      | `ACCOUNT#<id>` | `NUMBER#<e164>`              | `ACCOUNT#<id>#NUMBERS` / `<status>#<e164>`   | `SITE#<siteId>#NUMBERS` / same  |
+| Order       | `ACCOUNT#<id>` | `ORDER#<orderId>`            | `ORDERS` / `<orderId>`                       | `ORDERS#<status>` / `<orderId>` |
+| Guard       | `ACCOUNT#<id>` | `EMAIL#<email>`, `EXT#<ext>` |                                              |                                 |
+| Guard       | `MAC#<mac>`    | `MAC`                        |                                              |                                 |
+| Idempotency | `ACCOUNT#<id>` | `IDEMPOTENCY#<key>`          |                                              |                                 |
 
 Names in sort keys are lower-cased so lists sort naturally. Order ids are
 ULIDs (`ord_01J...`), so sorting by id is sorting by creation time.
@@ -84,6 +85,7 @@ stops two concurrent orders from handing out the same extension.
 | 16  | All orders with one status; count per status  | GSI2  | `GSI2PK = ORDERS#<status>`, descending                         | `GET /orders?status=`, `/overview`  |
 | 17  | Claim an email or extension within an account | table | `PUT PK = ACCOUNT#a, SK = EMAIL#e / EXT#x` if not exists       | order workflow                      |
 | 18  | Claim a MAC address                           | table | `PUT PK = MAC#m, SK = MAC` if not exists                       | order workflow                      |
+| 19  | Find the order for an idempotency key         | table | `PK = ACCOUNT#a`, `SK = IDEMPOTENCY#k` (TTL 24 h)              | `POST /accounts/{id}/orders`        |
 
 Notes on the choices:
 
@@ -120,11 +122,207 @@ succeeds when retried, for demos.
 
 ## API contract
 
-TODO (filled in with #2).
+Every payload is defined once, as a Zod schema in `packages/contracts`. The
+Lambdas parse requests with those schemas and the web app imports the same
+types, so there is no second definition to drift.
+
+### One REST Lambda
+
+All routes are served by one Lambda (`services/api/src/handlers/http.ts`)
+behind an API Gateway REST API with a `{proxy+}` resource, proxy integration
+and a Cognito user pool authorizer. A small router (`src/http/router.ts`) maps
+`METHOD /path/{param}` to handlers; literal segments win over parameters, so
+`/orders/preview` is never read as an order id.
+
+Why one function rather than one per route: the routes share almost all of
+their code and dependencies (repositories, validation, the contract), cold
+starts are paid once instead of per route, and the CDK stack stays small. The
+cost is coarser IAM (the function can do everything any route can) and
+per-route metrics come from the request log instead of per-function
+CloudWatch metrics. Each request writes one structured log line with method,
+path, status and duration.
+
+### Routes
+
+| Method | Path                                                    | Body                 | Response            |
+| ------ | ------------------------------------------------------- | -------------------- | ------------------- |
+| GET    | `/overview`                                             |                      | `Overview`          |
+| GET    | `/catalog/devices`                                      |                      | `DeviceCatalog`     |
+| GET    | `/search?q=&entity=&accountId=&limit=`                  |                      | `SearchResponse`    |
+| GET    | `/accounts?cursor=&limit=`                              |                      | `AccountPage`       |
+| GET    | `/accounts/{accountId}`                                 |                      | `Account`           |
+| GET    | `/accounts/{accountId}/sites`                           |                      | `SitePage`          |
+| GET    | `/accounts/{accountId}/users?siteId=&cursor=`           |                      | `VoiceUserPage`     |
+| GET    | `/accounts/{accountId}/numbers?siteId=&status=&cursor=` |                      | `PhoneNumberPage`   |
+| GET    | `/accounts/{accountId}/orders?status=&cursor=`          |                      | `OrderSummaryPage`  |
+| GET    | `/accounts/{accountId}/orders/{orderId}`                |                      | `Order`             |
+| POST   | `/accounts/{accountId}/orders/preview`                  | `OrderDraft`         | `OrderPreview`      |
+| POST   | `/accounts/{accountId}/orders`                          | `CreateOrderRequest` | `202 Order`         |
+| POST   | `/accounts/{accountId}/orders/{orderId}/retry`          |                      | `202 Order`         |
+| POST   | `/accounts/{accountId}/assistant/interpret`             | `InterpretRequest`   | `InterpretResponse` |
+| GET    | `/orders?status=&cursor=`                               |                      | `OrderSummaryPage`  |
+
+### Errors
+
+Every non-2xx body is an `ApiError`: `{ "error": { "code", "message", "details"? } }`.
+
+| Status | Code                    | When                                                                                                                            |
+| ------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 400    | `bad_request`           | Body or query fails its schema (`details.issues` lists `{ path, message }`), bad cursor, invalid JSON, wrong method (405)       |
+| 401    | `unauthorized`          | No valid token                                                                                                                  |
+| 404    | `not_found`             | Unknown route, account or order                                                                                                 |
+| 409    | `conflict`              | Retrying an order that is not `failed`; an idempotency key reused for a different order                                         |
+| 422    | `validation_failed`     | Order rules fail on create, or a draft refers to a site or user that does not exist (`details.issues` holds `ValidationIssue`s) |
+| 502    | `assistant_unavailable` | The language model provider failed or refused                                                                                   |
+| 500    | `internal`              | Anything unexpected; `details.requestId` matches the log line                                                                   |
+
+Preview is different on purpose: rule violations in a preview are a `200`
+with `valid: false` and the issues, because showing them is the point of a
+preview.
+
+### Authentication
+
+In AWS the REST API's Cognito authorizer validates the ID token and puts its
+claims on `requestContext.authorizer.claims`; the Lambda reads `sub`, `email`
+and `name` from there and rejects a request without them. The WebSocket API
+uses a Lambda authorizer (`ws-authorizer.ts`) because browsers cannot set
+headers on a WebSocket handshake; the token goes in `?token=`. Locally
+(`AUTH_MODE=local`) the harness issues HS256 tokens for demo operators and
+plays the authorizer's role. Pagination is described under "Data model".
 
 ## Order lifecycle
 
-TODO (filled in with #3).
+```mermaid
+stateDiagram-v2
+    [*] --> submitted: POST /orders
+    submitted --> validating: ValidateOrder
+    validating --> provisioning: lines claimed
+    validating --> failed: every line rejected
+    provisioning --> active: all lines succeeded
+    provisioning --> failed: any line failed
+    failed --> provisioning: POST /retry (failed lines only)
+    active --> [*]
+```
+
+Lines move `pending -> provisioning -> succeeded | failed`. Users created by an
+order show `provisioning` while their line runs (`removing` for removals), then
+`active` or `failed`.
+
+### Validation, twice
+
+`POST /orders/preview` resolves a draft (allocates the lowest free extension
+in the site's range and the lowest available number at the site) and runs the
+order rules. `POST /orders` runs the same rules on the lines the person
+approved; nothing is re-allocated, so what was previewed is what is ordered.
+The rules (`src/domain/order-validation.ts`) are pure functions over an
+`AccountContext`:
+
+- the account is not suspended; at most `MAX_ORDER_LINES` lines;
+- the site belongs to the account; the extension is inside the site's range,
+  unused, and not repeated in the order;
+- the DID is in the account's inventory, at that site, `available`, and not
+  repeated;
+- the email is unique within the account and the order (warning if it is not
+  on the account's domain);
+- the device exists in the catalog; a MAC is only given to hardware that takes
+  one, is not registered to any other phone and is not repeated (warning when
+  hardware has no MAC yet: it is provisioned without device configuration);
+- update and remove targets exist, are not locked by another in-flight order,
+  are not changed twice in one order, and still match the `before` snapshot
+  the person approved; an update can only change voicemail and the device.
+
+### Claims and concurrency
+
+The API's validation reads a snapshot, so two orders submitted at the same
+moment can both pass it. The workflow's first task closes that gap:
+ValidateOrder re-runs the rules and then claims every line's resources in one
+DynamoDB transaction per line: the user item, email and extension guards, the
+number (`available -> reserved`, conditional on still being available), the
+MAC guard and the account and site counters. If a condition fails, that line
+is rejected with a message naming what was taken; the integration tests run
+two orders for the same number concurrently and check that exactly one wins.
+
+Orders are updated by several Lambdas at once (up to five lines in parallel),
+so every order write is a read-modify-write guarded by a `version` attribute
+and retried on conflict. Order creation is idempotent: the client's
+`idempotencyKey` is stored with a hash of the request for 24 hours; a repeat
+returns the original order, a different request with the same key is a `409`.
+
+### Step Functions
+
+The state machine (Standard workflow) is defined in code in
+`src/workflow/definition.ts` (`orderWorkflowDefinition()`), so CDK and the
+local runner share one shape:
+
+- **ValidateOrder**: re-validate, claim, reject what cannot be claimed.
+- **ProvisionLines**: a Map over the claimed lines, `MaxConcurrency: 5`. Each
+  item runs **ProvisionLine** with `PROVISION_LINE_RETRY`
+  (`ProvisioningTransientError`, 2 s interval, backoff 2, 2 retries: three
+  attempts in total). Any other error, or running out of retries, goes to the
+  Catch, which calls the same Lambda as **RecordLineFailure** with the error;
+  it marks the line failed and releases its lock.
+- **FinalizeOrder**: `active` if every line succeeded, otherwise `failed`. If
+  ValidateOrder or the Map itself fails, their Catch also lands here and the
+  unfinished lines are failed with an explanation.
+
+ProvisionLine writes the current step to the order before running it, so the
+UI shows "Creating voicemail box" while it happens. Every task is safe to run
+twice: finished lines are skipped and claims recognise resources the order
+already holds.
+
+### Simulated provisioning
+
+There is no carrier, call server or device configuration service behind this
+project. `src/provisioning/simulated-provisioner.ts` implements the
+`Provisioner` interface by waiting 1-3 s per step
+(`PROVISIONING_STEP_DELAY_MS`) and failing transiently at
+`PROVISIONING_TRANSIENT_FAILURE_RATE` (default 0.1 per line attempt). Two
+email triggers make failure deterministic for tests and demos:
+`name+fail@...` fails permanently with a realistic error and `name+flaky@...`
+fails its first attempt transiently, then succeeds. A real integration would
+implement the same two methods (`plan`, `runStep`).
+
+### Retry
+
+`POST /accounts/{id}/orders/{orderId}/retry` is accepted only for a `failed`
+order. Failed lines go back to `pending`, the order to `provisioning`, and a
+new execution runs with `lineIds` limited to those lines. A failed add keeps
+its user (status `failed`) and its reserved number in the meantime, so the
+retry does not compete for a new number.
+
+### One order, end to end
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as Web app
+    participant API as REST Lambda
+    participant DB as DynamoDB
+    participant SFN as Step Functions
+    participant T as Task Lambdas
+    participant N as order-notifier
+    participant WS as WebSocket API
+
+    UI->>API: POST /orders/preview (draft)
+    API->>DB: load sites, users, numbers
+    API-->>UI: OrderPreview (resolved lines, issues)
+    UI->>API: POST /orders (approved lines, idempotencyKey)
+    API->>DB: re-validate, put order + idempotency record
+    API->>SFN: StartExecution(name = orderId)
+    API-->>UI: 202 Order (submitted)
+    SFN->>T: ValidateOrder
+    T->>DB: validating, claim each line (transactions), provisioning
+    loop each line, 5 at a time
+        SFN->>T: ProvisionLine (retry on transient errors)
+        T->>DB: step updates, then commit user and number
+    end
+    SFN->>T: FinalizeOrder
+    T->>DB: active or failed
+    DB-->>N: stream record (order item, new image)
+    N->>DB: connections subscribed to the account or "*"
+    N->>WS: PostToConnection order.updated
+    WS-->>UI: order.updated (full Order)
+```
 
 ## Assistant
 
