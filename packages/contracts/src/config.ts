@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /**
  * Runtime configuration the web app fetches from /config.json at startup.

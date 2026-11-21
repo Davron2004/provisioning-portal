@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { Account, DeviceModel, IsoDateTime, PhoneNumber, Site, VoiceUser } from './domain';
 import { OrderStatus, OrderSummary } from './orders';
 

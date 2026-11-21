@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /** ISO-8601 timestamp in UTC, e.g. 2026-11-21T14:03:00.000Z. */
 export const IsoDateTime = z.iso.datetime();
