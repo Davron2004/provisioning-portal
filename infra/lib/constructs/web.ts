@@ -28,7 +28,14 @@ export interface WebProps {
 }
 
 /** Files with stable names: revalidated on every load. Everything else is content-hashed. */
-const UNHASHED = ['index.html', 'config.json', 'theme-init.js', 'favicon.svg'];
+const UNHASHED = [
+  'index.html',
+  'config.json',
+  'theme-init.js',
+  'favicon.svg',
+  'manifest.webmanifest',
+  'icons/*',
+];
 
 /**
  * The Angular app: a private S3 bucket behind CloudFront (Origin Access

@@ -1,0 +1,21 @@
+{
+  "name": "Provisioning Portal",
+  "short_name": "Provisioning",
+  "description": "Provision users, extensions, numbers and devices for cloud phone customers, and follow every order live.",
+  "start_url": "/overview",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6fafe",
+  "theme_color": "#f6fafe",
+  "icons": [
+    { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}
