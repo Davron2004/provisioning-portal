@@ -5,19 +5,19 @@
     <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
     <div class="meta">
       <app-status-chip [status]="o.status" />
-      <span class="fact">
+      <p class="facts">
         <mat-icon
           [svgIcon]="o.source === 'assistant' ? 'wand_stars' : 'person'"
           aria-hidden="true"
         />
-        {{ sourceLabel(o.source) }}
-      </span>
-      <span class="fact"
-        >Submitted by {{ o.submittedBy }}, <app-relative-time [value]="o.createdAt"
-      /></span>
-      @if (duration(); as took) {
-        <span class="fact app-numeric">Took {{ took }}</span>
-      }
+        {{ sourceLabel(o.source) }}<span class="sep" aria-hidden="true">·</span>Submitted by
+        {{ o.submittedBy }}<span class="sep" aria-hidden="true">·</span
+        ><app-relative-time [value]="o.createdAt" />
+        @if (duration(); as took) {
+          <span class="sep" aria-hidden="true">·</span
+          ><span class="app-numeric">Took {{ took }}</span>
+        }
+      </p>
     </div>
     @if (canRetry()) {
       <button actions matButton="filled" type="button" [disabled]="retrying()" (click)="retry()">

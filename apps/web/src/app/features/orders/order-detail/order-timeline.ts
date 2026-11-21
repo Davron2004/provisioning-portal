@@ -6,7 +6,7 @@ import { statusStyle } from '../../../shared/ui/status-chip/status';
 
 /**
  * The order's event log, oldest first: status changes stand out with their status
- * icon and color; line events (a line provisioned, retried or failed) sit between them.
+ * icon and color (a step that started shows a ring); line events (a line provisioned, retried or failed) sit between them.
  */
 @Component({
   selector: 'app-order-timeline',
@@ -94,6 +94,7 @@ import { statusStyle } from '../../../shared/ui/status-chip/status';
     .at {
       padding-top: 2px;
       font: var(--mat-sys-body-small);
+      line-height: 20px;
       color: var(--mat-sys-on-surface-variant);
     }
   `,
@@ -104,7 +105,9 @@ export class OrderTimeline {
   protected readonly items = computed(() =>
     this.events().map((event) => {
       const style = event.status ? statusStyle(event.status) : null;
-      return { event, icon: style?.icon ?? null, tone: style?.tone ?? null };
+      // A log is history: a step that started gets a ring, not the spinner it has live.
+      const icon = style ? (style.busy ? 'radio_button_unchecked' : style.icon) : null;
+      return { event, icon, tone: style?.tone ?? null };
     }),
   );
 }
