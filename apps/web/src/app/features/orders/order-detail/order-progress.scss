@@ -1,0 +1,201 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-5);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--app-space-2);
+    min-width: 0;
+
+    // The connector to the next step, behind the markers.
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 13px;
+      left: 36px;
+      right: 8px;
+      height: 2px;
+      border-radius: 1px;
+      background: var(--mat-sys-outline-variant);
+    }
+
+    &[data-state='done']:not(:last-child)::after {
+      background: var(--app-status-success-accent);
+    }
+  }
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-full);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-outline);
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  [data-state='done'] & {
+    border-color: var(--app-status-success-accent);
+    background: var(--app-status-success-accent);
+    color: var(--mat-sys-surface);
+  }
+
+  [data-state='current'] & {
+    border-color: var(--app-status-info-accent);
+    color: var(--app-status-info-accent);
+
+    mat-icon {
+      animation: spin 1.2s linear infinite;
+    }
+  }
+
+  [data-state='failed'] & {
+    border-color: var(--app-status-error-accent);
+    background: var(--app-status-error-accent);
+    color: var(--mat-sys-surface);
+  }
+
+  [data-state='upcoming'] & mat-icon {
+    visibility: hidden;
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+
+  [data-state='upcoming'] & {
+    color: var(--mat-sys-on-surface-variant);
+    font-weight: 400;
+  }
+
+  [data-state='failed'] & {
+    color: var(--app-status-error-fg);
+  }
+}
+
+.at {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-2);
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--app-radius-full);
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.segment {
+  flex: 0 1 0;
+  min-width: 0;
+  transition: flex-grow var(--app-duration-medium) var(--app-ease-standard);
+}
+
+.succeeded {
+  background: var(--app-status-success-accent);
+}
+
+.failed {
+  background: var(--app-status-error-accent);
+}
+
+.provisioning {
+  background: var(--app-status-info-accent);
+}
+
+// Pending lines are the empty track at the end.
+.segment.pending {
+  background: transparent;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-space-1) var(--app-space-4);
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+
+  &.pending {
+    background: var(--mat-sys-surface-container-highest);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 599.98px) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--app-space-3);
+
+    li {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--app-space-3);
+
+      &:not(:last-child)::after {
+        top: 30px;
+        bottom: -10px;
+        left: 13px;
+        right: auto;
+        width: 2px;
+        height: auto;
+      }
+    }
+  }
+
+  .text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--app-space-2);
+  }
+}

@@ -1,4 +1,4 @@
-import { formatAbsoluteTime, formatRelativeTime } from './format-time';
+import { formatAbsoluteTime, formatDuration, formatRelativeTime } from './format-time';
 
 const NOW = Date.parse('2026-11-21T15:00:00Z');
 const ago = (ms: number) => new Date(NOW - ms).toISOString();
@@ -40,5 +40,17 @@ describe('formatAbsoluteTime', () => {
     const text = formatAbsoluteTime('2026-11-21T15:00:00Z');
     expect(text).toMatch(/Nov 2\d, 2026/);
     expect(text).toMatch(/\d{1,2}:\d{2}/);
+  });
+});
+
+describe('formatDuration', () => {
+  it.each([
+    ['2026-11-21T15:00:00Z', '2026-11-21T15:00:45Z', '45 s'],
+    ['2026-11-21T15:00:00Z', '2026-11-21T15:03:12Z', '3 min 12 s'],
+    ['2026-11-21T15:00:00Z', '2026-11-21T15:05:00Z', '5 min'],
+    ['2026-11-21T15:00:00Z', '2026-11-21T17:05:00Z', '2 hr 5 min'],
+    ['2026-11-21T15:00:00Z', 'not a date', ''],
+  ])('from %s to %s is "%s"', (from, to, expected) => {
+    expect(formatDuration(from, to)).toBe(expected);
   });
 });

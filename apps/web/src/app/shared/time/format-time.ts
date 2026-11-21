@@ -64,3 +64,25 @@ export function formatAbsoluteDate(value: DateInput): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : absoluteDate.format(date);
 }
+
+/** How long something took, for people: "45 s", "3 min 12 s", "2 hr 5 min". */
+export function formatDuration(from: DateInput, to: DateInput): string {
+  const seconds = Math.max(
+    0,
+    Math.round((new Date(to).getTime() - new Date(from).getTime()) / 1000),
+  );
+  if (Number.isNaN(seconds)) {
+    return '';
+  }
+  if (seconds < 60) {
+    return `${seconds} s`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    const rest = seconds % 60;
+    return rest ? `${minutes} min ${rest} s` : `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours} hr ${rest} min` : `${hours} hr`;
+}
