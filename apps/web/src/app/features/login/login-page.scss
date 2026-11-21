@@ -30,7 +30,7 @@
   padding: var(--app-space-8) var(--app-space-7) var(--app-space-7);
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--app-radius-xl);
-  background: var(--mat-sys-surface);
+  background: var(--app-surface-card);
   box-shadow:
     0 1px 2px color-mix(in srgb, var(--mat-sys-shadow) 6%, transparent),
     0 8px 24px color-mix(in srgb, var(--mat-sys-shadow) 6%, transparent);

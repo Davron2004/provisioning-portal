@@ -32,6 +32,17 @@ html {
     )
   );
 
+  // Material's letter-spacing is tuned for Roboto; Inter has its own spacing built in
+  // and looks loose with extra tracking. Small labels keep a hint of it.
+  --mat-sys-body-large-tracking: 0;
+  --mat-sys-body-medium-tracking: 0;
+  --mat-sys-body-small-tracking: 0;
+  --mat-sys-label-large-tracking: 0;
+  --mat-sys-label-medium-tracking: 0.006rem;
+  --mat-sys-label-small-tracking: 0.006rem;
+  --mat-sys-title-medium-tracking: 0;
+  --mat-sys-title-small-tracking: 0;
+
   // Calmer than Material's defaults for a dense operations console.
   @include mat.toolbar-overrides(
     (

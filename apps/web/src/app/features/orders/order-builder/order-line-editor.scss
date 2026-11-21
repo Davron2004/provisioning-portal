@@ -8,7 +8,7 @@
   border: 1px solid var(--mat-sys-outline-variant);
   border-left: 4px solid var(--_accent);
   border-radius: var(--app-radius-lg);
-  background: var(--mat-sys-surface);
+  background: var(--app-surface-card);
 }
 
 :host([data-action='update_user']) {
