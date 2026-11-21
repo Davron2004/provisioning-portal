@@ -53,3 +53,11 @@ export function formatAbsoluteTime(value: DateInput): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : absolute.format(date);
 }
+
+const absoluteDate = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
+
+/** "Nov 21, 2026". */
+export function formatAbsoluteDate(value: DateInput): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : absoluteDate.format(date);
+}

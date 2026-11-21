@@ -1,4 +1,3 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
 import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -12,14 +11,15 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { filter, map } from 'rxjs';
+import { filter } from 'rxjs';
+import { COMPACT_LAYOUT, injectMediaQuery } from '../../shared/layout/media-query';
 import { BrandMark } from '../../shared/ui/brand-mark/brand-mark';
 import { ConnectionStatus } from '../connection-status/connection-status';
 import { GlobalSearch } from '../global-search/global-search';
@@ -27,8 +27,6 @@ import { SideNav } from '../side-nav/side-nav';
 import { ThemeToggle } from '../theme-toggle/theme-toggle';
 import { UserMenu } from '../user-menu/user-menu';
 
-/** Below this width the navigation becomes a drawer over the content. */
-const COMPACT_QUERY = '(max-width: 959.98px)';
 const NAV_COLLAPSED_KEY = 'pp.nav-collapsed';
 
 /** The signed-in layout: toolbar, navigation, and the routed page in <main>. */
@@ -59,12 +57,7 @@ export class Shell {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly content = viewChild.required('content', { read: ElementRef<HTMLElement> });
 
-  protected readonly compact = toSignal(
-    inject(BreakpointObserver)
-      .observe(COMPACT_QUERY)
-      .pipe(map((state) => state.matches)),
-    { initialValue: false },
-  );
+  protected readonly compact = injectMediaQuery(COMPACT_LAYOUT);
   /** Desktop: icon-only rail instead of the full navigation. */
   protected readonly railCollapsed = signal(this.readCollapsed());
   /** Compact: the drawer is open. */

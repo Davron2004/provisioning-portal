@@ -28,6 +28,10 @@
   overflow-wrap: anywhere;
 }
 
+.title-skeleton {
+  padding-block: 2px;
+}
+
 .subtitle {
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);

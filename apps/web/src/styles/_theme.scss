@@ -60,6 +60,28 @@ html {
       container-shape: var(--app-radius-md),
     )
   );
+  @include mat.table-overrides(
+    (
+      background-color: transparent,
+      header-headline-color: var(--mat-sys-on-surface-variant),
+      header-headline-font: var(--mat-sys-label-large-font),
+      header-headline-size: 13px,
+      header-headline-weight: 500,
+      header-headline-tracking: 0.01em,
+      header-container-height: 44px,
+      row-item-container-height: 56px,
+      row-item-outline-color: var(--mat-sys-outline-variant),
+    )
+  );
+  @include mat.tabs-overrides(
+    (
+      divider-color: var(--mat-sys-outline-variant),
+      label-text-font: var(--mat-sys-title-small-font),
+      label-text-size: 14px,
+      label-text-weight: 500,
+      label-text-tracking: 0.005em,
+    )
+  );
   @include mat.button-overrides(
     (
       filled-container-shape: var(--app-radius-md),
