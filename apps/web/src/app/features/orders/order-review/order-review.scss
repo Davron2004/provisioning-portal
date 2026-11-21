@@ -29,11 +29,6 @@
   height: 32px;
   padding: 0 14px 0 10px;
   font: var(--mat-sys-label-large);
-
-  &.zero {
-    background: var(--mat-sys-surface-container);
-    color: var(--mat-sys-on-surface-variant);
-  }
 }
 
 .verdict,
@@ -76,11 +71,16 @@
     vertical-align: top;
   }
 
+  // The header band is painted on the row group, not per cell: cells at fractional
+  // widths would leave hairline seams between their backgrounds.
+  thead {
+    background: var(--app-surface-card-muted);
+  }
+
   thead th {
     height: 44px;
     padding-block: 0;
     vertical-align: middle;
-    background: var(--app-surface-card-muted);
     color: var(--mat-sys-on-surface-variant);
     font: var(--mat-sys-label-large);
     white-space: nowrap;
@@ -107,7 +107,10 @@
     --_accent: var(--_remove);
   }
 
+  // A line with an error trades its action colour for the error tone.
   tbody[data-severity='error'] {
+    --_accent: var(--app-status-error-accent);
+
     background: color-mix(in srgb, var(--app-status-error-bg) 45%, transparent);
   }
 
@@ -141,7 +144,7 @@
   display: block;
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-on-surface-variant);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .card {
@@ -157,6 +160,12 @@
 
   &[data-action='remove_user'] {
     --_accent: var(--_remove);
+  }
+
+  &[data-severity='error'] {
+    --_accent: var(--app-status-error-accent);
+
+    border-color: var(--app-status-error-accent);
   }
 }
 
@@ -208,11 +217,6 @@
     flex: 1;
   }
 
-  .hint {
-    font: var(--mat-sys-body-small);
-    color: var(--app-status-error-fg);
-  }
-
   mat-spinner {
     display: inline-block;
     margin-inline-end: var(--app-space-2);
@@ -225,8 +229,7 @@
       display: none;
     }
 
-    button,
-    .hint {
+    button {
       flex: 1 1 100%;
     }
 

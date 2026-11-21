@@ -22,7 +22,7 @@ import {
   pickedUser,
 } from '../order-form/order-form';
 import { normalizeMac } from '../order-form/mac-address';
-import { fieldError, watchControl } from './field-errors';
+import { fieldError, showsFieldError, watchControl } from './field-errors';
 import { UserPicker } from './user-picker';
 
 const KINDS: Readonly<Record<LineAction, { label: string; icon: AppIcon }>> = {
@@ -58,7 +58,10 @@ export function suggestEmail(firstName: string, lastName: string, domain: string
     UserPicker,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[attr.data-action]': 'line().controls.action.value' },
+  host: {
+    '[attr.data-action]': 'line().controls.action.value',
+    '[class.has-error]': 'showsError()',
+  },
   templateUrl: './order-line-editor.html',
   styleUrl: './order-line-editor.scss',
 })
@@ -139,6 +142,12 @@ export class OrderLineEditor {
   protected readonly lineError = computed(() => {
     this.tick();
     return this.form().lineError(this.line());
+  });
+
+  /** Any error on the card: the stripe and border switch to the error tone. */
+  protected readonly showsError = computed(() => {
+    this.tick();
+    return this.noChanges() || !!this.lineError() || showsFieldError(this.line());
   });
 
   protected readonly excludedUsers = computed(() => {

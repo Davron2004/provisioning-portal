@@ -6,7 +6,7 @@
   gap: var(--app-space-3);
   padding: var(--app-space-3) var(--app-space-5) var(--app-space-4);
   border: 1px solid var(--mat-sys-outline-variant);
-  border-left: 4px solid var(--_accent);
+  border-left: 4px solid var(--_stripe, var(--_accent));
   border-radius: var(--app-radius-lg);
   background: var(--app-surface-card);
 }
@@ -17,6 +17,14 @@
 
 :host([data-action='remove_user']) {
   --_accent: var(--app-status-error-accent);
+}
+
+// A line with an error says so before its fields are read: the whole outline, not only
+// the stripe, so it also stands out from a remove line's red stripe.
+:host(.has-error) {
+  --_stripe: var(--app-status-error-accent);
+
+  border-color: var(--app-status-error-accent);
 }
 
 .head {

@@ -58,18 +58,13 @@ input {
   }
 }
 
+// A key cap (see kbd in _base.scss), a size up to sit in the 40px field.
 .hint {
   position: absolute;
   right: 12px;
-  display: grid;
-  place-items: center;
   min-width: 22px;
   height: 22px;
-  padding: 0 6px;
-  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--app-radius-sm);
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-small);
   pointer-events: none;
   transition: opacity var(--app-duration-short) var(--app-ease-standard);
 }

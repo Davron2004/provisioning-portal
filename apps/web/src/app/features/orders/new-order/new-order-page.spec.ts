@@ -99,6 +99,24 @@ describe('NewOrderPage', () => {
     expect(host.querySelectorAll('.mat-form-field-invalid').length).toBeGreaterThan(0);
   });
 
+  it('marks a line with errors in the error tone, including fields it had not touched', async () => {
+    const { host, settle, button, firstLine } = await setUp();
+    const card = () => host.querySelector('app-order-line-editor')!;
+    // Typing in some fields touches the line before the preview touches the rest.
+    firstLine().controls.firstName.setValue('Priya');
+    firstLine().controls.firstName.markAsTouched();
+    await settle();
+    expect(card().classList).not.toContain('has-error');
+
+    button('Preview order').click();
+    await settle();
+    expect(card().classList).toContain('has-error');
+
+    fill(firstLine());
+    await settle();
+    expect(card().classList).not.toContain('has-error');
+  });
+
   it('previews, reviews and submits the order', async () => {
     const { host, settle, button, firstLine, navigate } = await setUp();
     fill(firstLine());
