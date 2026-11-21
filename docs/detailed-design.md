@@ -533,16 +533,17 @@ with a retry.
 Filters, sort and tabs live in the URL, so any view can be linked to and the
 back button behaves. Query parameters arrive as component inputs
 (`withComponentInputBinding`); `injectQueryParamsUpdater()` writes them back with
-`replaceUrl`. Search boxes filter on every keystroke and write the URL once
-typing pauses (`injectSearchParam()`), so the box never fights the router.
+`replaceUrl`. Search boxes write the URL once typing pauses (`injectSearchParam()`), so the box
+never fights the router; server-side filters (users) send the URL's value to the
+API, so one request goes out per pause.
 
-| Page                    | URL state                                           |
-| ----------------------- | --------------------------------------------------- |
-| `/accounts`             | `q`, `status`, `plan`, `sort`, `dir`                |
-| `/accounts/:id/users`   | `site`, `q` (both sent to the API)                  |
-| `/accounts/:id/sites`   | none                                                |
-| `/accounts/:id/numbers` | `site`, `status` (both sent to the API)             |
-| `/accounts/:id/orders`  | `status` (sent to the API)                          |
+| Page                    | URL state                               |
+| ----------------------- | --------------------------------------- |
+| `/accounts`             | `q`, `status`, `plan`, `sort`, `dir`    |
+| `/accounts/:id/users`   | `site`, `q` (both sent to the API)      |
+| `/accounts/:id/sites`   | none                                    |
+| `/accounts/:id/numbers` | `site`, `status` (both sent to the API) |
+| `/accounts/:id/orders`  | `status` (sent to the API)              |
 
 The account tabs are child routes of `accounts/:accountId`. The page provides an
 `AccountStore` (the account and its sites, loaded once), which every tab

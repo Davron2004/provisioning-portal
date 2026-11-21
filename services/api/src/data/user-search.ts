@@ -1,5 +1,12 @@
 import type { VoiceUser } from '@provisioning/contracts';
 
+/** Lower-case and accent-insensitive, so "jose" finds "José". */
+const fold = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+
 /** Digits only, so "(613) 555-0142", "+1 613 555 0142" and "6135550142" compare equal. */
 const digitsOf = (value: string): string => value.replace(/\D/g, '');
 
@@ -15,7 +22,7 @@ export interface UserMatcher {
  * and a multi-group number like "613 555 0142" is checked as one number.
  */
 export function createUserMatcher(q: string): UserMatcher {
-  const text = q.trim().toLowerCase();
+  const text = fold(q.trim());
   const terms = text.split(/\s+/).filter(Boolean);
   const wholeDigits = digitsOf(text);
   // "613 555 0142" is a phone number typed with spaces: compare it as one.
@@ -25,10 +32,10 @@ export function createUserMatcher(q: string): UserMatcher {
     const did = user.did ? digitsOf(user.did) : '';
     const digits = digitsOf(term);
     return (
-      user.firstName.toLowerCase().includes(term) ||
-      user.lastName.toLowerCase().includes(term) ||
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(term) ||
-      user.email.toLowerCase().includes(term) ||
+      fold(user.firstName).includes(term) ||
+      fold(user.lastName).includes(term) ||
+      fold(`${user.firstName} ${user.lastName}`).includes(term) ||
+      fold(user.email).includes(term) ||
       user.extension.includes(term) ||
       (digits.length > 0 && did.includes(digits))
     );

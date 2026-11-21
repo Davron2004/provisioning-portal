@@ -24,6 +24,12 @@ describe('createUserMatcher', () => {
     expect(matches('turing')).toBe(false);
   });
 
+  it('ignores accents', () => {
+    const jose = user({ id: 'u3', firstName: 'José', lastName: 'Bélanger' });
+    expect(matches('jose belanger', jose)).toBe(true);
+    expect(matches('JOSÉ', jose)).toBe(true);
+  });
+
   it('requires every term to match', () => {
     expect(matches('ada hopper')).toBe(false);
     expect(matches('lovelace 2101')).toBe(true);

@@ -8,6 +8,7 @@ import {
 } from '@angular/common/http';
 import { EnvironmentProviders, Provider } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
+import type { VoiceUser } from '@provisioning/contracts';
 import { LOCAL_CONFIG } from './test-config';
 
 /** A response body, or a function of the request that returns one (or throws an HttpErrorResponse). */
@@ -35,6 +36,34 @@ export class FakeApi {
     this.handlers.set(path, handler);
     this.held.delete(path);
     return this;
+  }
+
+  /**
+   * Serves a users list like GET /accounts/{id}/users: honors `siteId`, `q` (case-insensitive
+   * name, email, extension, or DID digits), `limit` and an opaque `cursor`.
+   */
+  onUsers(path: string, users: readonly VoiceUser[], defaultLimit = 25): this {
+    return this.on(path, (request) => {
+      const siteId = request.params.get('siteId');
+      const q = (request.params.get('q') ?? '').trim().toLowerCase();
+      const digits = q.replace(/\D/g, '');
+      const limit = Number(request.params.get('limit') ?? defaultLimit);
+      const start = Number(request.params.get('cursor') ?? 0);
+      const matching = users.filter(
+        (user) =>
+          (!siteId || user.siteId === siteId) &&
+          (!q ||
+            [`${user.firstName} ${user.lastName}`, user.email, user.extension].some((field) =>
+              field.toLowerCase().includes(q),
+            ) ||
+            (digits !== '' && (user.did ?? '').replace(/\D/g, '').includes(digits))),
+      );
+      const end = start + limit;
+      return {
+        items: matching.slice(start, end),
+        nextCursor: end < matching.length ? String(end) : null,
+      };
+    });
   }
 
   /** Fails every request to `path` with this status and an ApiError body. */
