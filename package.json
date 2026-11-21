@@ -1,0 +1,31 @@
+{
+  "name": "provisioning-portal",
+  "private": true,
+  "description": "Service delivery portal for a cloud phone (UCaaS) provider: accounts, sites, users and live provisioning orders.",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*",
+    "infra",
+    "e2e"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "angular-eslint": "^22.8.0",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.8.1",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.73.0"
+  }
+}

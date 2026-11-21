@@ -1,0 +1,8 @@
+node_modules
+dist
+cdk.out
+coverage
+.angular
+playwright-report
+test-results
+package-lock.json

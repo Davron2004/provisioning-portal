@@ -1,0 +1,27 @@
+# Local backing services. Ports can be overridden so parallel worktrees do not collide:
+#   DDB_PORT=8001 OPENSEARCH_PORT=9201 docker compose -p pp-lane2 up -d
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    command: ['-jar', 'DynamoDBLocal.jar', '-sharedDb', '-inMemory']
+    ports:
+      - '${DDB_PORT:-8000}:8000'
+
+  opensearch:
+    image: opensearchproject/opensearch:2.19.2
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: 'true'
+      DISABLE_INSTALL_DEMO_CONFIG: 'true'
+      OPENSEARCH_JAVA_OPTS: '-Xms512m -Xmx512m'
+      bootstrap.memory_lock: 'true'
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 65536, hard: 65536 }
+    ports:
+      - '${OPENSEARCH_PORT:-9200}:9200'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fs http://localhost:9200/_cluster/health || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 30

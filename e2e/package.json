@@ -1,0 +1,17 @@
+{
+  "name": "@provisioning/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright end-to-end tests against the full local stack.",
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --no-warn-ignored tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^22.19.0",
+    "typescript": "~6.0.2"
+  }
+}

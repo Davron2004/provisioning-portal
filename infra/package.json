@@ -1,0 +1,26 @@
+{
+  "name": "@provisioning/infra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AWS CDK app: API Gateway, Lambda, DynamoDB, OpenSearch, Step Functions, Cognito, S3 + CloudFront.",
+  "type": "module",
+  "scripts": {
+    "cdk": "cdk",
+    "synth": "cdk synth --quiet",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint --no-warn-ignored bin lib test"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.278.0",
+    "constructs": "^10.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "aws-cdk": "^2.1149.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.2",
+    "vitest": "^5.1.1"
+  }
+}
