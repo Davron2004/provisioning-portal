@@ -43,6 +43,17 @@ html {
   --mat-sys-title-medium-tracking: 0;
   --mat-sys-title-small-tracking: 0;
 
+  // Keyboard focus: Material's components only show a faint state layer on focus, which
+  // is easy to miss. Strong focus indicators draw a ring that matches the app's own
+  // `:focus-visible` outline (2px, primary) on buttons, chips, tabs, toggles and menus.
+  @include mat.strong-focus-indicators(
+    (
+      border-color: var(--mat-sys-primary),
+      border-width: 2px,
+      border-radius: var(--app-radius-md),
+    )
+  );
+
   // Calmer than Material's defaults for a dense operations console.
   @include mat.toolbar-overrides(
     (
