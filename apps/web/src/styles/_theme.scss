@@ -93,6 +93,16 @@ html {
       label-text-tracking: 0.005em,
     )
   );
+  // Dialogs share the cards' corner radius and the page headings' weight.
+  @include mat.dialog-overrides(
+    (
+      container-shape: var(--app-radius-xl),
+      subhead-size: 20px,
+      subhead-line-height: 28px,
+      subhead-weight: 600,
+      subhead-tracking: -0.01em,
+    )
+  );
   @include mat.button-overrides(
     (
       filled-container-shape: var(--app-radius-md),
