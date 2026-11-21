@@ -7,7 +7,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
 
 /** Toolbar search box: Enter opens /search?q=. Press "/" anywhere to focus it. */
 @Component({
@@ -39,6 +41,20 @@ export class GlobalSearch {
   private readonly router = inject(Router);
   private readonly input = viewChild.required<ElementRef<HTMLInputElement>>('input');
   protected readonly query = signal('');
+
+  constructor() {
+    // Show the search the page is showing, and start empty everywhere else.
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => {
+        const url = this.router.parseUrl(event.urlAfterRedirects);
+        const onSearch = url.root.children['primary']?.segments[0]?.path === 'search';
+        this.query.set(onSearch ? (url.queryParams['q'] ?? '') : '');
+      });
+  }
 
   protected submit(event: Event): void {
     event.preventDefault();
