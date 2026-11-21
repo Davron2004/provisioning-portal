@@ -47,11 +47,6 @@ export class OverviewPage {
   protected readonly data = computed(() =>
     this.overview.hasValue() ? this.overview.value() : undefined,
   );
-  /** When the counts were taken; a server clock slightly ahead never reads "in a moment". */
-  protected readonly generatedAt = computed(() => {
-    const data = this.data();
-    return data ? Math.min(Date.parse(data.generatedAt), Date.now()) : 0;
-  });
   protected readonly skeletonRows = Array.from({ length: 5 });
 
   protected readonly numbersTotal = computed(() => {

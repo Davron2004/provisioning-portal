@@ -1,7 +1,7 @@
 <app-page-header title="Overview" subtitle="Accounts, numbers and orders across every customer.">
-  @if (data()) {
+  @if (data(); as data) {
     <p actions class="freshness">
-      Updated <app-relative-time [value]="generatedAt()" />
+      Updated <app-relative-time [value]="data.generatedAt" />
       <button
         matIconButton
         type="button"
