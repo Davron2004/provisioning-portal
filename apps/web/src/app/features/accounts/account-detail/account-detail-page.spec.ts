@@ -51,18 +51,27 @@ describe('AccountDetailPage', () => {
     expect(TestBed.inject(Title).getTitle()).not.toContain('Northwind Dental');
   });
 
-  it('shows why an account could not be loaded', async () => {
-    const api = anAccountApi().fail(
-      '/accounts/acc_northwind',
-      404,
-      'Account acc_northwind was not found',
-    );
+  it('says when an account does not exist, with a way back', async () => {
+    const api = anAccountApi().fail('/accounts/acc_northwind', 404, 'Not found');
     const page = await setUpAccountPage(api, '/accounts/acc_northwind/users');
 
-    expect(page.host().querySelector('app-error-state')?.textContent).toContain(
-      'Account acc_northwind was not found',
+    expect(page.host().querySelector('h1')?.textContent).toBe('Account not found');
+    expect(page.host().querySelector('app-empty-state h2')?.textContent).toBe(
+      'No account with the ID acc_northwind',
     );
+    expect(page.host().querySelector('app-empty-state a')?.getAttribute('href')).toBe('/accounts');
     expect(page.host().querySelector('nav[mat-tab-nav-bar]')).toBeNull();
+  });
+
+  it('shows other failures with a retry', async () => {
+    const api = anAccountApi().fail('/accounts/acc_northwind', 500, 'The API is down.');
+    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users');
+    expect(page.host().querySelector('app-error-state')?.textContent).toContain('The API is down.');
+
+    api.on('/accounts/acc_northwind', anAccount());
+    page.host().querySelector<HTMLButtonElement>('app-error-state button')!.click();
+    await page.settle();
+    expect(page.host().querySelector('h1')?.textContent).toBe('Northwind Dental');
   });
 
   it('refreshes the counts when one of its orders finishes', async () => {

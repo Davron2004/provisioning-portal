@@ -1,12 +1,25 @@
 @if (store.accountResource.error(); as error) {
-  <app-page-header title="Account">
+  <app-page-header [title]="notFound() ? 'Account not found' : 'Account'">
     <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
   </app-page-header>
-  <app-error-state
-    heading="Could not load this account"
-    [error]="error"
-    (retry)="store.accountResource.reload()"
-  />
+  @if (notFound()) {
+    <app-empty-state
+      icon="domain"
+      [heading]="'No account with the ID ' + store.accountId()"
+      message="It may have been removed, or the link is mistyped."
+    >
+      <a matButton="outlined" routerLink="/accounts">
+        <mat-icon svgIcon="arrow_back" />
+        All accounts
+      </a>
+    </app-empty-state>
+  } @else {
+    <app-error-state
+      heading="Could not load this account"
+      [error]="error"
+      (retry)="store.accountResource.reload()"
+    />
+  }
 } @else {
   <app-page-header [title]="account()?.name ?? ''" [loading]="!account()">
     <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
@@ -83,8 +96,11 @@
         [active]="rla.isActive"
       >
         {{ tab.label }}
-        @if (tab.count !== undefined) {
-          <span class="tab-count app-numeric">{{ tab.count }}</span>
+        @if (tab.counted) {
+          <!-- Present (empty) while loading, so the tabs do not shift when counts arrive. -->
+          <span class="tab-count app-numeric" [class.pending]="tab.count === undefined">{{
+            tab.count
+          }}</span>
         }
       </a>
     }

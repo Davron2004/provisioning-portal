@@ -78,6 +78,13 @@
   line-height: 20px;
 }
 
+.tab-count.pending {
+  display: inline-block;
+  width: 28px;
+  height: 20px;
+  vertical-align: middle;
+}
+
 .tabs {
   margin-bottom: var(--app-space-5);
 }
@@ -92,7 +99,8 @@
     padding: var(--app-space-3) var(--app-space-4);
   }
 
-  .stat:nth-child(3) {
+  // Wide row of its own; `+` matches the divider rule's specificity.
+  .stat + .stat:nth-child(3) {
     grid-column: 1 / -1;
     grid-row: 2;
     border-left: 0;

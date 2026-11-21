@@ -13,11 +13,13 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TERMINAL_ORDER_STATUSES } from '@provisioning/contracts';
 import { EMPTY, filter, switchMap } from 'rxjs';
+import { toApiProblem } from '../../../core/api/api-problem';
 import { RealtimeService } from '../../../core/realtime/realtime';
 import { DocumentTitle } from '../../../core/routing/title-strategy';
 import { countOf } from '../../../shared/format/labels';
 import { formatAbsoluteDate } from '../../../shared/time/format-time';
 import { Breadcrumb, Breadcrumbs } from '../../../shared/ui/breadcrumbs/breadcrumbs';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { PlanBadge } from '../../../shared/ui/plan-badge/plan-badge';
@@ -31,6 +33,7 @@ import { AccountStore } from './account-store';
   selector: 'app-account-detail-page',
   imports: [
     Breadcrumbs,
+    EmptyState,
     ErrorState,
     MatButtonModule,
     MatIconModule,
@@ -61,11 +64,16 @@ export class AccountDetailPage {
   protected readonly tabs = computed(() => {
     const account = this.account();
     return [
-      { path: 'users', label: 'Users', count: account?.userCount },
-      { path: 'sites', label: 'Sites', count: account?.siteCount },
-      { path: 'numbers', label: 'Numbers', count: account?.numbersTotal },
-      { path: 'orders', label: 'Orders', count: undefined },
+      { path: 'users', label: 'Users', counted: true, count: account?.userCount },
+      { path: 'sites', label: 'Sites', counted: true, count: account?.siteCount },
+      { path: 'numbers', label: 'Numbers', counted: true, count: account?.numbersTotal },
+      { path: 'orders', label: 'Orders', counted: false, count: undefined },
     ];
+  });
+
+  protected readonly notFound = computed(() => {
+    const error = this.store.accountResource.error();
+    return !!error && toApiProblem(error).status === 404;
   });
 
   protected readonly customerSince = computed(() => {

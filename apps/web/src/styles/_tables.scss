@@ -97,11 +97,18 @@
     background: var(--mat-sys-surface-container-low);
   }
 
+  // End-aligned (numeric) columns: header text lines up with the figures. Use
+  // arrowPosition="before" on their sort headers, so the arrow sits on the free side.
   .app-align-end {
     text-align: right;
 
     .mat-sort-header-container {
       justify-content: flex-end;
+    }
+
+    // That container is row-reverse, where "start" is the right edge.
+    .mat-sort-header-position-before {
+      justify-content: flex-start;
     }
   }
 }
