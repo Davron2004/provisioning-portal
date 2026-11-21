@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApiError, ApiErrorCode } from '@provisioning/contracts';
-import { ZodError } from 'zod';
+import { ApiError, ApiErrorCode, ValidationIssue } from '@provisioning/contracts';
+import * as z from 'zod';
 
 export type ApiProblemCode = ApiErrorCode | 'network' | 'invalid_response' | 'unknown';
 
@@ -50,7 +50,7 @@ export function toApiProblem(error: unknown): ApiProblem {
           : 'The request could not be completed.'),
     };
   }
-  if (error instanceof ZodError) {
+  if (error instanceof z.ZodError) {
     return {
       status: 0,
       code: 'invalid_response',
@@ -59,4 +59,18 @@ export function toApiProblem(error: unknown): ApiProblem {
     };
   }
   return { status: 0, code: 'unknown', message: 'Something went wrong. Try again.' };
+}
+
+const ValidationDetails = z.object({ issues: z.array(ValidationIssue) });
+
+/**
+ * The validation issues of a `validation_failed` (422) problem, e.g. an order line
+ * that names a site or user the account does not have. Empty for anything else.
+ */
+export function validationIssues(problem: ApiProblem): ValidationIssue[] {
+  if (problem.code !== 'validation_failed') {
+    return [];
+  }
+  const details = ValidationDetails.safeParse(problem.details);
+  return details.success ? details.data.issues : [];
 }
