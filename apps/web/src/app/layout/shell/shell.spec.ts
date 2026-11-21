@@ -27,6 +27,7 @@ describe('Shell and routes', () => {
             .on('/accounts/acc_northwind', anAccount())
             .on('/accounts/acc_northwind/sites', aPage([]))
             .on('/accounts/acc_northwind/users', aPage([]))
+            .on('/accounts/acc_northwind/numbers', aPage([]))
             .on('/catalog/devices', { items: [] }),
         ),
         provideAppIcons(),
@@ -72,8 +73,10 @@ describe('Shell and routes', () => {
 
   it('binds route parameters to page inputs', async () => {
     await harness.navigateByUrl('/accounts/acc_northwind/orders/new');
+    await harness.fixture.whenStable();
     expect(host().querySelector('h1')?.textContent).toBe('New order');
-    expect(host().querySelector('app-breadcrumbs')?.textContent).toContain('acc_northwind');
+    // The account was loaded by the :accountId the page received.
+    expect(host().querySelector('app-breadcrumbs')?.textContent).toContain('Northwind Dental');
   });
 
   it('opens an account on its first tab and names the account in the title', async () => {

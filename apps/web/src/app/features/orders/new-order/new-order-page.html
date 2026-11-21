@@ -1,0 +1,86 @@
+<app-page-header title="New order" [subtitle]="subtitle()">
+  <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+</app-page-header>
+
+<ol class="steps" aria-label="Steps">
+  <li [attr.aria-current]="step() === 'build' ? 'step' : null" [class.done]="step() === 'review'">
+    <span class="dot app-numeric" aria-hidden="true">1</span> Build
+  </li>
+  <li aria-hidden="true" class="rule"></li>
+  <li [attr.aria-current]="step() === 'review' ? 'step' : null">
+    <span class="dot app-numeric" aria-hidden="true">2</span> Review and submit
+  </li>
+</ol>
+
+@if (directory.error(); as error) {
+  <app-error-state
+    heading="Could not load this account"
+    [error]="error"
+    (retry)="directory.retry()"
+  />
+} @else if (!directory.ready()) {
+  <div class="loading" aria-busy="true" role="status" aria-label="Loading the account">
+    <app-skeleton height="180px" />
+    <app-skeleton width="320px" height="36px" />
+  </div>
+} @else if (step() === 'build') {
+  @if (handoff(); as from) {
+    <aside class="from-assistant" aria-label="Started from the assistant">
+      <mat-icon svgIcon="wand_stars" aria-hidden="true" />
+      <p>
+        Drafted by the assistant from <q>{{ from.prompt }}</q>. Change anything you need, then
+        preview it.
+      </p>
+    </aside>
+  }
+
+  <app-order-builder [form]="form" [directory]="directory" />
+
+  <div class="footer">
+    @if (buildProblem(); as problem) {
+      <p class="problem" role="alert">
+        <mat-icon svgIcon="error" aria-hidden="true" />
+        {{ problem }}
+      </p>
+    }
+    <div class="bar">
+      <a matButton [routerLink]="['/accounts', accountId()]">Cancel</a>
+      <span class="spacer"></span>
+      <span class="count app-numeric" aria-live="polite">{{ lineLabel() }}</span>
+      <button
+        matButton="filled"
+        type="button"
+        [disabled]="previewing()"
+        [attr.aria-busy]="previewing() || null"
+        (click)="requestPreview()"
+      >
+        @if (previewing()) {
+          <mat-spinner diameter="18" aria-hidden="true" />
+        }
+        {{ previewing() ? 'Checking' : 'Preview order' }}
+        @if (!previewing()) {
+          <mat-icon iconPositionEnd svgIcon="arrow_forward" />
+        }
+      </button>
+    </div>
+    <p class="note">
+      Nothing is provisioned yet: the preview checks every line first.
+      <span class="keys"
+        >Press <kbd>{{ modifierKey }}</kbd> <kbd>Enter</kbd> to preview.</span
+      >
+    </p>
+  </div>
+} @else if (reviewed(); as r) {
+  <app-order-review
+    [preview]="r.preview"
+    [draft]="r.draft"
+    [sites]="directory.sites()"
+    [devices]="directory.devices()"
+    [submitting]="submission.submitting()"
+    [submitError]="submission.error()"
+    (back)="backToEdit()"
+    (submitOrder)="submit()"
+  >
+    <p review-note class="review-note">Nothing is provisioned until you submit.</p>
+  </app-order-review>
+}

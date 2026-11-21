@@ -36,13 +36,14 @@ export const routes: Routes = [
       {
         path: 'accounts/:accountId/orders/new',
         title: 'New order',
-        loadComponent: () => import('./features/orders/new-order-page').then((m) => m.NewOrderPage),
+        loadComponent: () =>
+          import('./features/orders/new-order/new-order-page').then((m) => m.NewOrderPage),
       },
       {
         path: 'accounts/:accountId/orders/:orderId',
         title: 'Order',
         loadComponent: () =>
-          import('./features/orders/order-detail-page').then((m) => m.OrderDetailPage),
+          import('./features/orders/order-detail/order-detail-page').then((m) => m.OrderDetailPage),
       },
       {
         path: 'accounts/:accountId',
@@ -59,7 +60,8 @@ export const routes: Routes = [
       {
         path: 'orders',
         title: 'Orders',
-        loadComponent: () => import('./features/orders/orders-page').then((m) => m.OrdersPage),
+        loadComponent: () =>
+          import('./features/orders/orders-list/orders-page').then((m) => m.OrdersPage),
       },
       {
         path: 'assistant',
