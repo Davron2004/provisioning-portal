@@ -105,6 +105,7 @@ Lambda entry points (each exports `handler`), under `services/api/src/handlers/`
 | `workflow/finalize-order.ts` | Step Functions task                                              |
 | `streams/search-indexer.ts`  | DynamoDB Streams -> OpenSearch                                   |
 | `streams/order-notifier.ts`  | DynamoDB Streams -> WebSocket push                               |
+| `seed-demo-data.ts`          | CloudFormation custom resource: demo data on first deploy (dev)  |
 
 Environment variables read by the handlers: `TABLE_NAME`, `OPENSEARCH_ENDPOINT`,
 `STATE_MACHINE_ARN`, `WS_MANAGEMENT_ENDPOINT`, `AUTH_MODE` (`cognito` | `local`),
