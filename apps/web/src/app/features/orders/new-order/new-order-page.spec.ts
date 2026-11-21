@@ -161,6 +161,32 @@ describe('NewOrderPage', () => {
     );
   });
 
+  it('keeps the preview’s errors on their lines after going back to edit', async () => {
+    const { host, settle, button, firstLine } = await setUp((fake) =>
+      fake.on(`${BASE}/orders/preview`, (request: HttpRequest<unknown>) => ({
+        ...previewOf(request.body as OrderDraft),
+        valid: false,
+        issues: [
+          {
+            lineIndex: 0,
+            field: 'user.extension',
+            code: 'extension_duplicate',
+            message: 'Extension 2104 is also on line 2',
+            severity: 'error',
+          },
+        ],
+      })),
+    );
+    fill(firstLine());
+    button('Preview order').click();
+    await settle();
+    expect(button('Submit order').disabled).toBe(true);
+
+    button('Back to edit').click();
+    await settle();
+    expect(textsOf(host, 'mat-error')).toContain('Extension 2104 is also on line 2');
+  });
+
   it('shows what the server rejected on the field it is about', async () => {
     const { host, settle, button, firstLine } = await setUp((fake) =>
       fake.on(`${BASE}/orders/preview`, () => {

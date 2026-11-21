@@ -12,14 +12,11 @@ import { AuthService } from '../../core/auth/auth';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (auth.user(); as user) {
-      <button
-        class="trigger"
-        type="button"
-        [matMenuTriggerFor]="menu"
-        [attr.aria-label]="'Account: ' + user.name"
-        [matTooltip]="user.name"
-      >
+      <!-- Named by its (hidden) text, not aria-label: an aria-label without the visible
+           initials fails WCAG 2.5.3 Label in Name. -->
+      <button class="trigger" type="button" [matMenuTriggerFor]="menu" [matTooltip]="user.name">
         <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="app-visually-hidden">Account: {{ user.name }}</span>
       </button>
       <mat-menu #menu="matMenu" xPosition="before" class="app-user-menu">
         <div class="identity">

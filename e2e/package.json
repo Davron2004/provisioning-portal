@@ -7,9 +7,10 @@
   "scripts": {
     "e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint --no-warn-ignored tests"
+    "lint": "eslint --no-warn-ignored support tests playwright.config.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.65.1",
     "@types/node": "^22.19.0",
     "typescript": "~6.0.2"
