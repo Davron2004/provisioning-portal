@@ -7,11 +7,14 @@ import { log } from './log';
 import { createRestGateway } from './rest-gateway';
 import { isTableEmpty, seedDatabase } from './seed';
 import { startStepFunctionsStandIn } from './step-functions';
+import { startStreamsPoller } from './streams-poller';
 import { ensureTable } from './table-setup';
+import { startWebSocketGateway } from './websocket-gateway';
+import { STREAM_FILTER_PATTERNS } from '../streams/records';
 
 /**
  * Local development harness: runs the real Lambda handlers on a laptop
- * against DynamoDB Local (and, later, OpenSearch). See
+ * against DynamoDB Local. See
  * docs/detailed-design.md, "Local development harness".
  *
  *   npm run start:local -w @provisioning/api            # seed if the table is empty
@@ -59,6 +62,35 @@ async function main() {
 
   const { handler: httpHandler } = await import('../handlers/http');
 
+  // WebSocket API + Management API on one port, as API Gateway serves both from one domain.
+  process.env.WS_MANAGEMENT_ENDPOINT = `http://localhost:${config.wsPort}`;
+  const [ws, wsAuthorizer, orderNotifier] = await Promise.all([
+    import('../handlers/ws'),
+    import('../handlers/ws-authorizer'),
+    import('../handlers/streams/order-notifier'),
+  ]);
+  const wsServer = await startWebSocketGateway({
+    port: config.wsPort,
+    region: config.region,
+    authorizer: wsAuthorizer.handler,
+    handler: ws.handler,
+  });
+  log.info(`WebSocket API on ws://${config.host}:${config.wsPort}/?token=<idToken>`);
+
+  const poller = await startStreamsPoller({
+    endpoint: config.dynamoEndpoint,
+    region: config.region,
+    tableName: config.tableName,
+    consumers: [
+      {
+        name: 'order-notifier',
+        filterPatterns: STREAM_FILTER_PATTERNS.orderNotifier,
+        handler: orderNotifier.handler,
+      },
+    ],
+  });
+  log.info('Polling the table stream for order-notifier');
+
   const apiBase = `http://${config.host}:${config.apiPort}`;
   const runtimeConfig: RuntimeConfig = {
     apiBaseUrl: apiBase,
@@ -84,7 +116,9 @@ async function main() {
 
   const shutdown = () => {
     log.info('Shutting down');
+    poller.stop();
     api.close();
+    wsServer.close();
     sfn.server.close();
     process.exit(0);
   };
