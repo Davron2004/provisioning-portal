@@ -219,7 +219,9 @@ export function generateSeed(now: Date = new Date(), seed = 20_261_121): SeedDat
       let attempts = 1;
       if (historic.retried) {
         events.push(
-          orderEvent(iso(t), orderMessages.lineRetrying(label, historic.retried), { lineId }),
+          orderEvent(iso(t), orderMessages.lineTransientError(label, historic.retried, 1), {
+            lineId,
+          }),
         );
         t += randomInt(random, 6_000, 10_000);
         attempts = 2;
