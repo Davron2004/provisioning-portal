@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { E164, Extension, IsoDateTime, MacAddress, PersonName } from './domain';
 
 /** Maximum lines in one order. Keeps a full order under the WebSocket frame limit. */
