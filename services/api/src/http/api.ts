@@ -4,6 +4,7 @@ import { Router } from './router';
 import { registerAccountRoutes } from './routes/accounts';
 import { registerOrderReadRoutes, registerOrderWriteRoutes } from './routes/orders';
 import { registerOverviewRoutes } from './routes/overview';
+import { registerSearchRoutes } from './routes/search';
 
 /** Every REST route in packages/contracts/src/api.ts. */
 export function buildRouter(deps: ApiDeps): Router {
@@ -12,6 +13,7 @@ export function buildRouter(deps: ApiDeps): Router {
   registerAccountRoutes(router, deps);
   registerOrderReadRoutes(router, deps);
   registerOrderWriteRoutes(router, deps);
+  registerSearchRoutes(router, deps);
   return router;
 }
 
