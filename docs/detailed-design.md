@@ -507,7 +507,60 @@ TODO (infrastructure lane).
 
 ## Front-end
 
-TODO (web lane).
+### Reading data
+
+Each API service in `apps/web/src/app/core/api` exposes reads as `httpResource`s
+validated against the contract schema, so a page only ever holds data that
+matches the types. List endpoints are cursor-paginated; `pagedList()`
+(`core/api/paged-list.ts`) turns one into a "load more" list: pages accumulate
+until the query changes, a page that loads again replaces itself (no
+duplicates), and a failed later page keeps what is already shown with a retry
+under it. Pages render four states from it: a skeleton with the final row
+height while the first page loads, the rows, an empty state, or an error state
+with a retry.
+
+### State in the URL
+
+Filters, sort and tabs live in the URL, so any view can be linked to and the
+back button behaves. Query parameters arrive as component inputs
+(`withComponentInputBinding`); `injectQueryParamsUpdater()` writes them back with
+`replaceUrl`. Search boxes filter on every keystroke and write the URL once
+typing pauses (`injectSearchParam()`), so the box never fights the router.
+
+| Page                    | URL state                                           |
+| ----------------------- | --------------------------------------------------- |
+| `/accounts`             | `q`, `status`, `plan`, `sort`, `dir`                |
+| `/accounts/:id/users`   | `site` (sent to the API), `q` (filters loaded rows) |
+| `/accounts/:id/sites`   | none                                                |
+| `/accounts/:id/numbers` | `site`, `status` (both sent to the API)             |
+| `/accounts/:id/orders`  | `status` (sent to the API)                          |
+
+The account tabs are child routes of `accounts/:accountId`. The page provides an
+`AccountStore` (the account and its sites, loaded once), which every tab
+injects. Client-side filters only see loaded rows; the count above the list
+says so ("3 matches in the first 25 users"), and totals come from the counters
+on the account and site items.
+
+### Live updates
+
+`RealtimeService.orderUpdates(accountId | '*')` streams `order.updated` pushes.
+The overview applies a push to its recent orders and status counts at once
+(`applyOrderToOverview`), then reloads `/overview` once pushes pause, so the
+exact numbers come from the server. The account's orders tab overlays pushes
+on the loaded list (`mergeLiveOrders`): a newer push replaces an order in place,
+an order newer than everything listed goes on top, and anything older waits for
+its page. When an order for the open account finishes, the account and its
+sites reload, since their counters moved. Without a connection the streams are
+quiet and the pages show what they loaded.
+
+### Layout
+
+Tables are `mat-table`s inside `.app-table-card` (`styles/_tables.scss`). Each row
+has one real link (the account or order name) stretched over the row, so the
+whole row is clickable while keyboard and screen reader users get a single
+link per row and open-in-new-tab works. Below 600 px wide, lists render as
+cards instead of tables. Numbers use tabular figures and phone numbers are
+shown as `(613) 555-0142`.
 
 ## Trade-offs
 
