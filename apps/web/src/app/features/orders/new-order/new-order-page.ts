@@ -193,6 +193,10 @@ export class NewOrderPage {
 
   protected backToEdit(): void {
     this.goTo('build');
+    // The builder is rendered afresh, and binding its controls re-runs their validators,
+    // which drops the preview's findings. Put them back on the lines once it is on screen.
+    const issues = this.reviewed()?.preview.issues ?? [];
+    afterNextRender(() => this.form.applyIssues(issues), { injector: this.injector });
   }
 
   protected submit(): void {
