@@ -105,4 +105,10 @@ export const HANDLERS = {
     env: ['TABLE_NAME', 'WS_MANAGEMENT_ENDPOINT'],
     access: ['table:read', 'table:write', 'stream:read', 'execute-api:ManageConnections'],
   },
+  seedDemoData: {
+    entry: 'src/handlers/seed-demo-data.ts',
+    trigger: 'CloudFormation custom resource on stack create, non-production stages only',
+    env: ['TABLE_NAME'],
+    access: ['table:read', 'table:write'],
+  },
 } as const satisfies Record<string, HandlerSpec>;

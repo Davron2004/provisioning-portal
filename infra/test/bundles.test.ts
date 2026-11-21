@@ -18,8 +18,9 @@ describe('Lambda bundles', () => {
   it('load as ES modules and export a handler', async () => {
     const { app, template } = synthPortal({ bundle: true, outdir });
     app.synth();
+    // The API handlers (CDK's own helper functions have no LOG_LEVEL).
     const functions = Object.values(template.findResources('AWS::Lambda::Function')).filter(
-      (fn) => fn.Properties.Runtime === 'nodejs22.x',
+      (fn) => fn.Properties.Environment?.Variables?.LOG_LEVEL,
     );
     expect(functions).toHaveLength(Object.keys(HANDLERS).length);
     for (const fn of functions) {

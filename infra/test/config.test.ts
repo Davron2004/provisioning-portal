@@ -24,8 +24,12 @@ describe('loadConfig', () => {
     });
   });
 
-  it('retains data in prod', () => {
-    expect(load({ stage: 'prod' }).removalPolicy).toBe(RemovalPolicy.RETAIN);
+  it('retains data and skips demo data in prod', () => {
+    const prod = load({ stage: 'prod' });
+    expect(prod.removalPolicy).toBe(RemovalPolicy.RETAIN);
+    expect(prod.seedDemoData).toBe(false);
+    expect(load({}).seedDemoData).toBe(true);
+    expect(load({ seedDemoData: 'false' }).seedDemoData).toBe(false);
   });
 
   it('takes the budget email from context or BUDGET_EMAIL, and validates it', () => {
