@@ -75,8 +75,13 @@
       <aside class="demo" aria-label="Demo account">
         <mat-icon svgIcon="info" aria-hidden="true" />
         <p>
-          Local demo: sign in as
-          <button type="button" class="demo-email" (click)="useDemoAccount()">
+          <span class="demo-title">Local demo account</span>
+          <button
+            type="button"
+            class="demo-email"
+            [attr.aria-label]="'Fill in ' + demoEmail"
+            (click)="useDemoAccount()"
+          >
             {{ demoEmail }}
           </button>
         </p>
