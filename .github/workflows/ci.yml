@@ -38,8 +38,23 @@ jobs:
         image: amazon/dynamodb-local:latest
         ports:
           - 8000:8000
+      opensearch:
+        image: opensearchproject/opensearch:2.19.2
+        env:
+          discovery.type: single-node
+          DISABLE_SECURITY_PLUGIN: 'true'
+          DISABLE_INSTALL_DEMO_CONFIG: 'true'
+          OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -fs http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 40
     env:
       DYNAMODB_ENDPOINT: http://localhost:8000
+      OPENSEARCH_ENDPOINT: http://localhost:9200
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
