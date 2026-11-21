@@ -7,6 +7,8 @@ export function bodyRows(table: Locator): Locator {
 
 /** The text of one row's cell under the column header `column`. */
 export async function cellText(table: Locator, row: Locator, column: string): Promise<string> {
+  // The headers are read once, so wait until the row (and with it the table) is on screen.
+  await row.waitFor();
   const headers = (await table.getByRole('columnheader').allInnerTexts()).map((h) => h.trim());
   const index = headers.indexOf(column);
   if (index === -1) throw new Error(`No column "${column}" in ${headers.join(', ')}`);

@@ -106,16 +106,15 @@ test.describe('account detail', () => {
     const lastName = name!.split(' ').at(-1)!;
     const did = await cellText(table, someone, 'DID');
 
-    const usersRequest = page.waitForRequest(
+    const filtered = page.waitForResponse(
       (r) => r.url().includes('/accounts/acc_mer-bleue/users') && r.url().includes('q='),
     );
     await filter.fill(lastName);
-    expect(new URL((await usersRequest).url()).searchParams.get('q')).toBe(lastName);
+    // The filtering happens on the server: the list is fetched again with ?q=.
+    expect(new URL((await filtered).url()).searchParams.get('q')).toBe(lastName);
     await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe(lastName);
+    await expect(rows.filter({ hasNotText: new RegExp(lastName, 'i') })).toHaveCount(0);
     await expect(rows.filter({ hasText: email! })).toHaveCount(1);
-    for (const row of await rows.all()) {
-      await expect(row).toContainText(new RegExp(lastName, 'i'));
-    }
 
     // The number as shown, e.g. "(753) 555-0105", finds its user.
     await filter.fill(did);
