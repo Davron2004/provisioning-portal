@@ -71,10 +71,13 @@
     vertical-align: top;
   }
 
-  // The header band is painted on the row group, not per cell: cells at fractional
-  // widths would leave hairline seams between their backgrounds.
-  thead {
-    background: var(--app-surface-card-muted);
+  // Row fills are inset shadows, not backgrounds (see _tables.scss).
+  tr {
+    box-shadow: inset 0 0 0 100vmax var(--app-row-fill, transparent);
+  }
+
+  thead tr {
+    --app-row-fill: var(--app-surface-card-muted);
   }
 
   thead th {
@@ -111,7 +114,7 @@
   tbody[data-severity='error'] {
     --_accent: var(--app-status-error-accent);
 
-    background: color-mix(in srgb, var(--app-status-error-bg) 45%, transparent);
+    --app-row-fill: color-mix(in srgb, var(--app-status-error-bg) 45%, transparent);
   }
 
   .num {
