@@ -91,6 +91,30 @@ describe('search against OpenSearch', () => {
     expect(otherAccount.hits.map((h) => h.id)).not.toContain(sofia().id);
   });
 
+  it('counts each entity for the chips, across the entity filter and within the account', async () => {
+    const all = await service.search({ q: 'kanata', limit: 5 });
+    const { user, number, order } = all.totals;
+    expect(user + number + order).toBe(all.total);
+    // Exact counts, not just the page of hits.
+    expect(all.total).toBeGreaterThan(all.hits.length);
+
+    const ordersOnly = await service.search({ q: 'kanata', entity: 'order', limit: 5 });
+    expect(ordersOnly.totals).toEqual(all.totals);
+    expect(ordersOnly.total).toBe(order);
+
+    const oneAccount = await service.search({
+      q: 'kanata',
+      accountId: 'acc_lumen-ridge',
+      limit: 5,
+    });
+    expect(oneAccount.totals.user).toBeLessThanOrEqual(user);
+    expect(oneAccount.totals.user + oneAccount.totals.number + oneAccount.totals.order).toBe(
+      oneAccount.total,
+    );
+    const elsewhere = await service.search({ q: 'kanata', accountId: 'acc_hogsback', limit: 5 });
+    expect(elsewhere.totals).toEqual({ user: 0, number: 0, order: 0 });
+  });
+
   it('keeps up with stream changes and never returns raw HTML', async () => {
     const repos = createRepositories(table.doc, table.tableName);
     const indexer = new SearchIndexer(client, index, () => cachedLookups(repos));

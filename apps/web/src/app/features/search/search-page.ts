@@ -24,7 +24,6 @@ import {
   combineLatest,
   debounce,
   distinctUntilChanged,
-  forkJoin,
   map,
   merge,
   of,
@@ -68,9 +67,7 @@ interface Query {
 interface SearchState {
   readonly query: Query;
   readonly loading: boolean;
-  /** Every entity, for the counts on the filter chips. */
-  readonly all?: SearchResponse;
-  /** What the list shows: `all`, or a search of just the chosen entity. */
+  /** The hits the list shows, and every entity's total for the chips. */
   readonly shown?: SearchResponse;
   readonly error?: unknown;
 }
@@ -130,11 +127,11 @@ export class SearchPage {
     }
     return [...groups].map(([entity, hits]) => ({ entity, hits }));
   });
-  protected readonly counts = computed(() => {
-    const hits = this.state()?.all?.hits ?? [];
-    return Object.fromEntries(
-      ENTITIES.map((entity) => [entity, hits.filter((hit) => hit.entity === entity).length]),
-    ) as Record<SearchEntity, number>;
+  /** Matches per entity (exact, from the API, not just the hits on this page). */
+  protected readonly counts = computed(() => this.state()?.shown?.totals);
+  protected readonly allCount = computed(() => {
+    const counts = this.counts();
+    return counts ? ENTITIES.reduce((sum, entity) => sum + counts[entity], 0) : undefined;
   });
   protected readonly summary = computed(() => {
     const shown = this.state()?.shown;
@@ -175,14 +172,9 @@ export class SearchPage {
   }
 
   private run(query: Query): Observable<SearchState> {
-    const find = (entity: SearchEntity | null) =>
-      this.searchApi.find({ q: query.q, entity, limit: SEARCH_LIMIT });
-    const requests = query.entity
-      ? forkJoin({ all: find(null), shown: find(query.entity) })
-      : find(null).pipe(map((all) => ({ all, shown: all })));
     const current = this.state();
-    return requests.pipe(
-      map((responses): SearchState => ({ query, loading: false, ...responses })),
+    return this.searchApi.find({ q: query.q, entity: query.entity, limit: SEARCH_LIMIT }).pipe(
+      map((shown): SearchState => ({ query, loading: false, shown })),
       catchError((error: unknown) => of<SearchState>({ query, loading: false, error })),
       // Keep the previous results on screen (dimmed) while the new ones load.
       startWith<SearchState>({ ...current, query, loading: true, error: undefined }),
