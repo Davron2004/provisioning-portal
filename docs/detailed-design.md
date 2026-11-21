@@ -5,7 +5,68 @@ code in the PR that changes it.
 
 ## Architecture overview
 
-TODO (architecture lane): components, request paths, and a diagram.
+A single-page Angular app served from CloudFront talks to two API Gateway
+APIs: a REST API for reads and commands, and a WebSocket API that pushes order
+updates. Everything behind them is serverless and pay-per-use except the
+OpenSearch domain. All state lives in one DynamoDB table; its stream feeds the
+search index and the live updates, so neither is written to directly by the
+request path.
+
+```mermaid
+flowchart LR
+    Browser[Angular app]
+    subgraph Edge
+        CF[CloudFront<br/>security headers, SPA routing]
+        S3[(S3 bucket<br/>app + config.json)]
+    end
+    Cognito[Cognito user pool]
+    subgraph APIs[API Gateway]
+        REST[REST API<br/>Cognito authorizer]
+        WS[WebSocket API<br/>Lambda authorizer]
+    end
+    subgraph Compute[Lambda]
+        HTTP[http]
+        WSH[ws]
+        WSA[ws-authorizer]
+        IDX[search-indexer]
+        NOT[order-notifier]
+    end
+    subgraph Workflow[Step Functions]
+        SFN[Order workflow<br/>validate, provision lines, finalize]
+    end
+    DDB[(DynamoDB<br/>single table + stream)]
+    OS[(OpenSearch)]
+    LLM[Bedrock / Claude API]
+
+    Browser --> CF --> S3
+    Browser -- InitiateAuth --> Cognito
+    Browser -- ID token --> REST --> HTTP
+    Browser -- "?token=" --> WS
+    WS --> WSA
+    WS --> WSH
+    HTTP --> DDB
+    HTTP -- StartExecution --> SFN
+    HTTP -- search --> OS
+    HTTP -- interpret --> LLM
+    SFN --> DDB
+    WSH --> DDB
+    DDB -- stream --> IDX --> OS
+    DDB -- stream --> NOT -- PostToConnection --> WS
+```
+
+| Path            | Flow                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Sign-in         | The app calls Cognito `InitiateAuth` (`USER_PASSWORD_AUTH`) and keeps the ID token.                    |
+| Reads           | REST API (Cognito authorizer) -> `http` Lambda -> DynamoDB, or OpenSearch for `/search`.               |
+| Placing orders  | `POST /orders` validates, stores the order and starts a Step Functions execution; the API returns 202. |
+| Provisioning    | The state machine runs the three workflow Lambdas, which write progress to the order item.             |
+| Live updates    | Order writes reach `order-notifier` through the table stream; it pushes them to subscribed WebSockets. |
+| Search indexing | User, number and order writes reach `search-indexer` through the same stream.                          |
+| Assistant       | `http` asks Claude (Bedrock or the Claude API) for an intent only; the preview is deterministic code.  |
+
+The same handlers run locally behind stand-ins for each AWS service (see
+"Local development harness"), and the CDK app in `infra/` deploys them
+(see "Infrastructure").
 
 ## Data model and access patterns
 
@@ -512,7 +573,223 @@ CORS allows `http://localhost:${WEB_PORT}` (default 4200) unless
 
 ## Infrastructure
 
-TODO (infrastructure lane).
+`infra/` is a CDK app (TypeScript, `aws-cdk-lib` v2). `npm run synth -w
+@provisioning/infra` needs no AWS credentials: there are no lookups, and the
+account is only resolved at deploy time. The stage comes from context (`-c
+stage=dev`, default `dev`), the region from `-c region=...` (default
+`ca-central-1`). Deploying is described in `docs/deployment.md`.
+
+### One stack per stage
+
+`ProvisioningPortal-<stage>` holds the whole application, built from focused
+constructs in `infra/lib/constructs/`:
+
+| Construct         | Resources                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `Data`            | The DynamoDB table from `TABLE_DEFINITION`: on-demand, PITR, stream `NEW_AND_OLD_IMAGES`, TTL `expiresAt`. |
+| `Auth`            | Cognito user pool (email sign-in, no self sign-up, 12+ character passwords) and a public web client.       |
+| `Search`          | OpenSearch 2.19 domain, one `t3.small.search` node, 10 GiB gp3, IAM resource policy.                       |
+| `Workflow`        | The three task Lambdas and the Standard state machine from `orderWorkflowDefinition()`.                    |
+| `RestApi`         | REST API (`{proxy+}` to `http`), Cognito authorizer, CORS preflight, gateway responses, throttling, logs.  |
+| `Realtime`        | WebSocket API, `ws` and `ws-authorizer` Lambdas, auto-deployed stage.                                      |
+| `StreamConsumers` | `search-indexer` and `order-notifier` with filtered event source mappings and a DLQ each.                  |
+| `Web`             | Private S3 bucket, CloudFront with Origin Access Control, security headers, the app and its `config.json`. |
+| `Observability`   | Monthly AWS Budget and CloudWatch alarms, with an SNS email topic.                                         |
+
+Everything is one stack because the parts reference each other in both
+directions (the web app's CSP names the APIs, the APIs' CORS names the web
+app) and are deployed and torn down together. Splitting it would add
+cross-stack exports without making any part independently deployable.
+
+### Driven by the API's own definitions
+
+Infrastructure imports `@provisioning/api/infra` instead of restating it:
+
+- the table's keys, indexes, TTL and stream come from `TABLE_DEFINITION`;
+- the state machine definition is `orderWorkflowDefinition()` with the
+  Lambda ARNs filled in, so retries (`PROVISION_LINE_RETRY`,
+  `LAMBDA_SERVICE_RETRY`) and `MAP_MAX_CONCURRENCY` are the ones the local
+  runner uses;
+- the event source mapping filters are `STREAM_FILTER_PATTERNS`;
+- every Lambda is created from its `HANDLERS` entry. Environment variable
+  names are type-checked against the entry's `env` list, and IAM is
+  generated from its `access` list (`infra/lib/access.ts`): a new kind of
+  access does not compile until it is mapped to a grant.
+
+Tests check the synthesized template against the same constants.
+
+### Lambda
+
+Each handler is bundled from TypeScript source by esbuild, locally (no
+Docker): ES modules, minified, with source maps (`NODE_OPTIONS=--enable-source-maps`)
+and a `createRequire` banner for CommonJS dependencies. The AWS SDK is bundled
+rather than taken from the runtime, so its version is the one in the
+lockfile. All functions run Node.js 22 on ARM64 (Graviton, cheaper per
+millisecond) with X-Ray tracing and their own log group (two weeks in dev,
+three months in prod).
+
+| Function                      | Memory  | Timeout | Notes                                |
+| ----------------------------- | ------- | ------- | ------------------------------------ |
+| `http`                        | 1024 MB | 30 s    | The assistant call is the slow path  |
+| `validate-order`              | 512 MB  | 60 s    | Loads an account's users and numbers |
+| `provision-line`              | 256 MB  | 90 s    | Simulated steps of 1-3 s each        |
+| `search-indexer`              | 512 MB  | 60 s    | Bulk request per batch               |
+| `ws`, `ws-authorizer`, others | 256 MB  | 10-30 s |                                      |
+
+A test bundles every handler and imports the bundle in Node, which catches
+ESM/CommonJS problems that template assertions cannot.
+
+### APIs
+
+**REST.** One `{proxy+}` `ANY` method with Lambda proxy integration and a
+Cognito user pool authorizer on the `Authorization` header. `OPTIONS` is a
+mock integration without auth that allows only the CloudFront origin. API
+Gateway's own errors use the API's error shape and carry CORS headers so the
+browser can read them: `UNAUTHORIZED` returns
+`{"error":{"code":"unauthorized","message":"Unauthorized"}}` (the same body
+the local harness returns), other 4xx map to `bad_request` and 5xx to
+`internal`. The stage is throttled to 10 requests per second with a burst of
+20 (context `apiRateLimit`, `apiBurstLimit`), which bounds Lambda and model
+spend; X-Ray tracing and JSON access logs are on, request/response body
+logging is off.
+
+**WebSocket.** Route selection on `$request.body.action`. `$connect` uses a
+Lambda REQUEST authorizer with identity source `route.request.querystring.token`;
+`$disconnect` and `$default` go to `ws.ts`. `ws` and `order-notifier` get
+`execute-api:ManageConnections` on `POST /@connections/*` of this stage only,
+and `WS_MANAGEMENT_ENDPOINT` is the stage's callback URL.
+
+### Workflow and streams
+
+The state machine is a Standard workflow (executions can wait out retries;
+history is kept for 90 days) with X-Ray tracing and `ERROR`-level logging,
+including execution data, to a `/aws/vendedlogs/states/` log group. The
+definition calls the Lambdas by ARN, so the state machine role gets
+`lambda:InvokeFunction` on exactly those three.
+
+Both stream consumers start at `TRIM_HORIZON`, split failing batches
+(`BisectBatchOnFunctionError`) and send records that still fail to their own
+SQS DLQ (SSE, TLS-only, 14 days). The indexer batches up to 100 records with
+a one-second window and retries five times (its bulk writes are idempotent);
+the notifier uses batches of 25 without a window, two retries and a
+five-minute maximum record age, because a stale live update is not worth
+delivering.
+
+### Search
+
+The domain is the smallest production-shaped setup: one `t3.small.search`
+data node, no dedicated masters, no zone awareness or standby, 10 GiB gp3,
+OpenSearch 2.19 (the version the local container and CI run). It enforces
+HTTPS with the `Policy-Min-TLS-1-2-PFS-2023-10` policy and encrypts at rest
+and node-to-node.
+
+**Public endpoint, IAM-protected.** A VPC domain would put the Lambdas in a
+VPC as well, and they would then need a NAT gateway or interface endpoints to
+reach Step Functions, API Gateway, Bedrock and Cognito: roughly $35+ a month
+for NAT alone, more than the domain. Instead every request is SigV4-signed
+(`OPENSEARCH_AUTH=sigv4`) and the domain's resource policy names only the
+`http` and `search-indexer` roles. Their identity policies are narrower still:
+both are limited to the `provisioning` index, and `http` can only read (the
+indexer sends its bulk requests to `/provisioning/_bulk` for that reason). The
+index is created with its mappings by the indexer on first write.
+
+### Auth
+
+The user pool signs in by email, allows no self sign-up (`admin-create-user`
+only), and requires 12+ character passwords with all character classes. The
+web client has no secret and allows `USER_PASSWORD_AUTH` because the Angular
+app calls `InitiateAuth` directly; ID and access tokens last 8 hours to match
+the local harness. MFA and self-service recovery are off because the portal
+has no screens for them yet; an administrator resets passwords.
+
+### Web hosting
+
+The bucket is private (Block Public Access, bucket-owner-enforced, SSE-S3,
+TLS-only); CloudFront reads it through Origin Access Control. 403 and 404
+return `/index.html` with status 200 so deep links reach the Angular router.
+Two `BucketDeployment`s upload the build: content-hashed bundles with
+`Cache-Control: public, max-age=31536000, immutable`, then `index.html`,
+`config.json`, `theme-init.js` and `favicon.svg` with `no-cache`, followed by
+an invalidation of those paths. Old bundles are not pruned, so a tab still on
+the previous version can lazy-load its routes after a deploy.
+
+`config.json` is generated at deploy time from the stack's outputs
+(`RuntimeConfig`: API URL, WebSocket URL, `auth.mode: "cognito"` with the
+user pool and client ids, `environment: "aws"`). The build's own
+`config.json` (local harness URLs) is never uploaded.
+
+**Security headers** (CloudFront response headers policy): HSTS for two
+years, `nosniff`, `X-Frame-Options: DENY`, `strict-origin-when-cross-origin`,
+a restrictive `Permissions-Policy`, and a Content-Security-Policy built at
+synth time:
+
+- `script-src 'self'` plus the SHA-256 of each inline script in the built
+  `index.html` (Angular adds one that activates the deferred stylesheet), so
+  no `'unsafe-inline'` for scripts;
+- `style-src 'self' 'unsafe-inline'` (Angular inlines critical CSS and injects
+  component styles);
+- `connect-src` lists the REST origin, the WebSocket origin and
+  `cognito-idp.<region>.amazonaws.com`; fonts and icons are self-hosted, so
+  `font-src` and `img-src` stay `'self'` (plus `data:` images);
+- `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`.
+
+The web app has to be built before synth (`npm run build -w @provisioning/web`);
+synth stops with that instruction if `apps/web/dist/web/browser/index.html` is
+missing. Tests synthesize against a small fixture build instead.
+
+### Assistant
+
+`ASSISTANT_PROVIDER` comes from context `assistantProvider` (default
+`bedrock`), the model from `assistantModel` (default
+`anthropic.claude-opus-5-5` on Bedrock, `claude-opus-5-5` on the Claude API).
+
+- `bedrock`: `http` gets `bedrock-mantle:CreateInference` on
+  `arn:aws:bedrock-mantle:<region>:<account>:project/*`. The Anthropic
+  Messages API on Bedrock is served by the `bedrock-mantle` endpoint, and the
+  Service Authorization Reference lists `CreateInference` against the
+  `project` resource with a `bedrock-mantle:Model` condition key. The grant is
+  not narrowed by model yet: the value format of that key is undocumented, and
+  a wrong guess fails closed in production. `BEDROCK_REGION` (context
+  `bedrockRegion`) defaults to the stack region.
+- `anthropic`: `ANTHROPIC_API_KEY_PARAM` names an SSM SecureString (default
+  `/provisioning-portal/<stage>/anthropic-api-key`, created by hand, never by
+  CDK); `http` gets `ssm:GetParameter` on that parameter and `kms:Decrypt`
+  only via SSM for that parameter's encryption context.
+- `rules`: no permissions.
+
+### Removal policies and tags
+
+`stage=prod` retains the table (also with deletion protection), user pool,
+search domain and web bucket, keeps logs for three months and turns on
+stack termination protection. Every other stage destroys everything with the
+stack, including the bucket's objects. All resources are tagged `project` and
+`stage`.
+
+### Cost guardrails and alarms
+
+With `-c budgetEmail=...` (or `BUDGET_EMAIL`; never committed), the stack
+creates a monthly AWS Budget of $50 (`monthlyBudgetUsd`) that emails at 80% of
+actual and 100% of forecast spend, and an SNS topic that emails alarm state
+changes. Without it, synth warns and skips both; the alarms still exist.
+Alarms (one evaluation period of 5 minutes, missing data is fine): errors on
+each of the eight Lambdas, failed workflow executions, messages in either DLQ,
+5 or more API 5xx responses, search cluster red, and less than 2 GiB of free
+search storage. Fourteen alarms cost about $1.40 a month.
+
+### Tests
+
+`infra/test` (Vitest + `aws-cdk-lib/assertions`) synthesizes the stack for a
+dev stage and for a prod stage with a budget email and the Claude API
+provider, and checks the properties that matter: table keys, stream and TTL;
+runtime, architecture and environment of every Lambda; that IAM follows each
+handler's declared access (only `http` can start executions or call the
+model, only the indexer writes to search, the authorizer has no data access);
+OpenSearch size, encryption and resource-policy principals; the state
+machine's retry policy and concurrency against the exported constants; stream
+filters and DLQs; Cognito authorizer on every method except `OPTIONS`; the 401
+body; WebSocket routes and authorizer; Cognito settings; OAC, SPA fallback,
+headers and CSP; caching; budget and alarms; retention in prod. CI runs them
+with the other unit tests and runs `cdk synth` after building the web app.
 
 ## Front-end
 
