@@ -35,7 +35,10 @@ npm start -w @provisioning/web      # Angular dev server
 npm run lint                        # ESLint + Prettier, whole repo
 npm run typecheck                   # every workspace
 npm test                            # unit tests, every workspace
-npm run e2e -w @provisioning/e2e    # Playwright (needs the local stack)
+npm run e2e                         # Playwright E2E; needs `docker compose up -d`, starts the harness (fresh seed) and a production build itself
+npm run e2e -- --project=chromium   # desktop only (`mobile` runs the @mobile tests on a phone viewport)
+E2E_REUSE_SERVERS=1 npm run e2e     # reuse a harness and web server already running on the same ports (no reseed)
+npx playwright show-report e2e/playwright-report   # last run's report; traces of failed tests are in it
 npm run synth -w @provisioning/infra
 ```
 

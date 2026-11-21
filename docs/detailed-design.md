@@ -789,7 +789,10 @@ search storage. Fourteen alarms cost about $1.40 a month.
 
 `ci.yml` runs on every pull request and push to `main`: lint, typecheck, unit
 tests (infra included), build, the API integration tests against DynamoDB
-Local and OpenSearch containers, and `cdk synth` after building the web app.
+Local and OpenSearch containers, the Playwright E2E suite (the harness with a
+fresh seed and a production build of the web app, against the same
+containers; report and traces are uploaded when it fails), and `cdk synth`
+after building the web app.
 
 `deploy.yml` runs when CI succeeds on a push to `main` (`workflow_run`), or by
 hand. It checks out the exact commit CI tested, builds the web app, assumes
