@@ -1,10 +1,13 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { AssistantService } from '../assistant/assistant-service';
+import { sharedProvider } from '../assistant/from-env';
 import { listEnv, requireEnv } from '../config/env';
 import { sharedDocumentClient } from '../data/client';
 import { createRepositories } from '../data/repositories';
 import { createApi } from '../http/api';
 import type { HttpApp } from '../http/app';
 import { newOrderId } from '../lib/ids';
+import { loadAccountContext } from '../orders/account-context';
 import { OrderService } from '../orders/order-service';
 import { sharedSearchClient } from '../search/client';
 import { searchIndexName } from '../search/index-definition';
@@ -27,7 +30,14 @@ function init(): HttpApp {
     newOrderId,
   });
   const search = new SearchService(sharedSearchClient(), searchIndexName());
-  return createApi({ ...repos, orderService, search, now }, listEnv('CORS_ALLOWED_ORIGINS', ['*']));
+  const assistant = new AssistantService({
+    provider: sharedProvider,
+    loadContext: (accountId) => loadAccountContext(repos, accountId, []),
+  });
+  return createApi(
+    { ...repos, orderService, search, assistant, now },
+    listEnv('CORS_ALLOWED_ORIGINS', ['*']),
+  );
 }
 
 export const handler = (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

@@ -11,7 +11,7 @@ import { createRestGateway } from './rest-gateway';
 import { isTableEmpty, seedDatabase } from './seed';
 import { startStepFunctionsStandIn } from './step-functions';
 import { startStreamsPoller } from './streams-poller';
-import { ensureTable } from './table-setup';
+import { ensureTable, waitForDynamo } from './table-setup';
 import { startWebSocketGateway } from './websocket-gateway';
 import { STREAM_FILTER_PATTERNS } from '../streams/records';
 
@@ -29,6 +29,7 @@ async function main() {
   applyHandlerEnvironment(config);
 
   const doc = createDocumentClient({ endpoint: config.dynamoEndpoint, region: config.region });
+  await waitForDynamo(doc, config.dynamoEndpoint);
   log.info(`DynamoDB Local at ${config.dynamoEndpoint}, table ${config.tableName}`);
   const search = createSearchClient();
   await waitForOpenSearch(search, config.openSearchEndpoint);
@@ -136,6 +137,12 @@ async function main() {
   await new Promise<void>((resolve) => api.listen(config.apiPort, resolve));
   log.info(`REST API on ${apiBase} (config: ${apiBase}/config.json)`);
   log.info(`CORS origins: ${config.allowedOrigins.join(', ')}`);
+  log.info(
+    `Assistant provider: ${process.env.ASSISTANT_PROVIDER ?? 'rules'}` +
+      (process.env.ASSISTANT_PROVIDER && process.env.ASSISTANT_PROVIDER !== 'rules'
+        ? ''
+        : ' (offline parser; set ASSISTANT_PROVIDER=anthropic or bedrock to use Claude)'),
+  );
 
   const shutdown = () => {
     log.info('Shutting down');

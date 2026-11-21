@@ -114,8 +114,11 @@ Environment variables read by the handlers: `TABLE_NAME`, `OPENSEARCH_ENDPOINT`,
 (`debug` | `info` | `warn` | `error` | `silent`). The workflow Lambdas also read
 `PROVISIONING_TRANSIENT_FAILURE_RATE` (default `0.1`) and
 `PROVISIONING_STEP_DELAY_MS` (default `1000-3000`) for the simulated provisioner.
+The assistant reads `BEDROCK_REGION` (defaults to `AWS_REGION`) for `bedrock`.
 Search reads `OPENSEARCH_INDEX` (default `provisioning`), `OPENSEARCH_AUTH`
 (`sigv4` default, `none` locally) and `OPENSEARCH_SERVICE` (`es` | `aoss`).
 
 Local-only overrides (set by the harness, never in AWS): `DYNAMODB_ENDPOINT`,
-`SFN_ENDPOINT`, `LOCAL_JWT_SECRET`. Local demo login: `admin@example.com` / `portal-demo`.
+`SFN_ENDPOINT`, `LOCAL_JWT_SECRET`, `ANTHROPIC_API_KEY` (instead of the SSM
+parameter). Infrastructure imports table, workflow, stream-filter and index
+definitions plus a per-handler env/IAM list from `@provisioning/api/infra`. Local demo login: `admin@example.com` / `portal-demo`.
