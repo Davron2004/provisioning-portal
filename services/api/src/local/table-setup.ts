@@ -1,5 +1,6 @@
 import {
   CreateTableCommand,
+  ListTablesCommand,
   DeleteTableCommand,
   DescribeTableCommand,
   ResourceNotFoundException,
@@ -43,5 +44,24 @@ export async function ensureTable(
 export async function dropTable(client: DynamoDBClient, tableName: string): Promise<void> {
   if (await tableExists(client, tableName)) {
     await client.send(new DeleteTableCommand({ TableName: tableName }));
+  }
+}
+
+/** Waits until DynamoDB Local answers, so `docker compose up -d` and the harness can start together. */
+export async function waitForDynamo(client: DynamoDBClient, endpoint: string, timeoutMs = 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try {
+      await client.send(new ListTablesCommand({ Limit: 1 }));
+      return;
+    } catch (error) {
+      if (Date.now() > deadline) {
+        throw new Error(
+          `DynamoDB Local at ${endpoint} is not reachable. Is \`docker compose up -d\` running?`,
+          { cause: error },
+        );
+      }
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
 }
