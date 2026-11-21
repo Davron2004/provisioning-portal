@@ -10,6 +10,7 @@
     "seed": "tsx src/local/seed-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "lint": "eslint --no-warn-ignored src"
   },
   "dependencies": {
