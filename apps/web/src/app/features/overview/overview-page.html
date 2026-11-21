@@ -1,0 +1,129 @@
+<app-page-header title="Overview" subtitle="Accounts, numbers and orders across every customer.">
+  @if (data()) {
+    <p actions class="freshness">
+      Updated <app-relative-time [value]="generatedAt()" />
+      <button
+        matIconButton
+        type="button"
+        aria-label="Refresh overview"
+        matTooltip="Refresh"
+        [disabled]="overview.isLoading()"
+        (click)="overview.reload()"
+      >
+        <mat-icon svgIcon="refresh" [class.spinning]="overview.isLoading()" />
+      </button>
+    </p>
+  }
+</app-page-header>
+
+@if (overview.error() && !data()) {
+  <app-error-state
+    heading="Could not load the overview"
+    [error]="overview.error()"
+    (retry)="overview.reload()"
+  />
+} @else {
+  <section class="kpis" aria-label="Totals" [attr.aria-busy]="!data()">
+    @if (data(); as data) {
+      <div class="tile">
+        <h2 class="tile-label"><mat-icon svgIcon="domain" aria-hidden="true" />Accounts</h2>
+        <p class="tile-value app-numeric">{{ data.accounts }}</p>
+        <a class="tile-link" routerLink="/accounts">
+          View accounts <mat-icon svgIcon="arrow_forward" aria-hidden="true" />
+        </a>
+      </div>
+      <div class="tile">
+        <h2 class="tile-label"><mat-icon svgIcon="location_on" aria-hidden="true" />Sites</h2>
+        <p class="tile-value app-numeric">{{ data.sites }}</p>
+        <p class="tile-caption">Across {{ countOf(data.accounts, 'account') }}</p>
+      </div>
+      <div class="tile">
+        <h2 class="tile-label"><mat-icon svgIcon="group" aria-hidden="true" />Users</h2>
+        <p class="tile-value app-numeric">{{ data.users }}</p>
+        <p class="tile-caption">Across {{ countOf(data.sites, 'site') }}</p>
+      </div>
+      <div class="tile">
+        <h2 class="tile-label"><mat-icon svgIcon="dialpad" aria-hidden="true" />Numbers in use</h2>
+        <p class="tile-value app-numeric">{{ data.numbersAssigned }}</p>
+        <app-utilization-meter
+          [used]="data.numbersAssigned"
+          [total]="numbersTotal()"
+          label="Numbers in use"
+        />
+        <p class="tile-caption app-numeric">{{ data.numbersAvailable }} available</p>
+      </div>
+    } @else {
+      @for (tile of [1, 2, 3, 4]; track tile) {
+        <div class="tile" aria-hidden="true">
+          <app-skeleton width="45%" />
+          <app-skeleton class="tile-value-skeleton" width="35%" height="36px" />
+          <app-skeleton width="60%" />
+        </div>
+      }
+    }
+  </section>
+
+  <div class="panels">
+    <section class="panel recent" aria-labelledby="recent-orders-heading">
+      <header class="panel-header">
+        <h2 id="recent-orders-heading">Recent orders</h2>
+        <a matButton routerLink="/orders">All orders</a>
+      </header>
+      @if (data(); as data) {
+        @if (data.recentOrders.length > 0) {
+          <ol class="order-list" aria-live="polite">
+            @for (order of data.recentOrders; track order.id) {
+              <li class="order">
+                <div class="order-main">
+                  <a
+                    class="order-title app-row-link"
+                    [routerLink]="['/accounts', order.accountId, 'orders', order.id]"
+                    >{{ order.title }}</a
+                  >
+                  <span class="order-meta"> {{ order.accountName }} · {{ progress(order) }} </span>
+                </div>
+                <app-status-chip class="order-status" [status]="order.status" />
+                <app-relative-time class="order-time" [value]="order.updatedAt" />
+              </li>
+            }
+          </ol>
+        } @else {
+          <app-empty-state
+            class="panel-empty"
+            icon="receipt_long"
+            heading="No orders yet"
+            message="Orders submitted for any account show up here and update as they are provisioned."
+          />
+        }
+      } @else {
+        <ol class="order-list" aria-hidden="true">
+          @for (row of skeletonRows; track $index) {
+            <li class="order">
+              <div class="order-main">
+                <app-skeleton width="70%" />
+                <app-skeleton width="40%" height="0.8em" />
+              </div>
+              <app-skeleton class="order-status" width="80px" height="24px" />
+              <app-skeleton class="order-time" width="64px" />
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <section class="panel statuses" aria-labelledby="order-status-heading">
+      <header class="panel-header">
+        <h2 id="order-status-heading">Orders by status</h2>
+      </header>
+      @if (data(); as data) {
+        <app-order-status-breakdown [counts]="data.ordersByStatus" />
+      } @else {
+        <div class="status-skeleton" aria-hidden="true">
+          <app-skeleton width="50%" height="28px" />
+          <app-skeleton height="8px" />
+          <app-skeleton [lines]="5" />
+        </div>
+      }
+    </section>
+  </div>
+}
