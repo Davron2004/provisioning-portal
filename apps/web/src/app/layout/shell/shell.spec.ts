@@ -1,13 +1,15 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
-import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
+import { Router, TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { FakeApi, provideFakeApi } from '../../../testing/fake-api';
+import { aPage, anAccount, anOverview } from '../../../testing/fixtures';
+import { provideFakeRealtime } from '../../../testing/realtime-fake';
 import { provideTestConfig } from '../../../testing/test-config';
 import { routes } from '../../app.routes';
 import { AuthService } from '../../core/auth/auth';
 import { provideAppIcons } from '../../core/icons/icons';
-import { RealtimeService } from '../../core/realtime/realtime';
 import { AppTitleStrategy } from '../../core/routing/title-strategy';
 
 describe('Shell and routes', () => {
@@ -19,6 +21,14 @@ describe('Shell and routes', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(routes, withComponentInputBinding()),
+        provideFakeApi(
+          new FakeApi()
+            .on('/overview', anOverview())
+            .on('/accounts/acc_northwind', anAccount())
+            .on('/accounts/acc_northwind/sites', aPage([]))
+            .on('/accounts/acc_northwind/users', aPage([]))
+            .on('/catalog/devices', { items: [] }),
+        ),
         provideAppIcons(),
         provideTestConfig(),
         { provide: TitleStrategy, useClass: AppTitleStrategy },
@@ -30,7 +40,7 @@ describe('Shell and routes', () => {
             signOut: vi.fn(),
           },
         },
-        { provide: RealtimeService, useValue: { state: signal('live') } },
+        provideFakeRealtime(),
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -61,9 +71,17 @@ describe('Shell and routes', () => {
   });
 
   it('binds route parameters to page inputs', async () => {
+    await harness.navigateByUrl('/accounts/acc_northwind/orders/new');
+    expect(host().querySelector('h1')?.textContent).toBe('New order');
+    expect(host().querySelector('app-breadcrumbs')?.textContent).toContain('acc_northwind');
+  });
+
+  it('opens an account on its first tab and names the account in the title', async () => {
     await harness.navigateByUrl('/accounts/acc_northwind');
-    expect(host().querySelector('h1')?.textContent).toBe('acc_northwind');
-    expect(host().querySelector('app-breadcrumbs')?.textContent).toContain('Accounts');
+    expect(TestBed.inject(Router).url).toBe('/accounts/acc_northwind/users');
+    await harness.fixture.whenStable();
+    expect(host().querySelector('h1')?.textContent).toBe('Northwind Dental');
+    expect(TestBed.inject(Title).getTitle()).toBe('Users · Northwind Dental · Provisioning Portal');
   });
 
   it('shows a not-found page for unknown paths', async () => {

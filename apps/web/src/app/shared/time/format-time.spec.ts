@@ -24,9 +24,9 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime('2025-06-15T12:00:00Z', NOW)).toBe('Jun 15, 2025');
   });
 
-  it('handles future times', () => {
+  it('handles future times, treating small clock skew as now', () => {
     expect(formatRelativeTime(NOW + 5 * MIN, NOW)).toBe('in 5 min');
-    expect(formatRelativeTime(NOW + 10_000, NOW)).toBe('in a moment');
+    expect(formatRelativeTime(NOW + 50_000, NOW)).toBe('just now');
   });
 
   it('returns an empty string for invalid dates', () => {

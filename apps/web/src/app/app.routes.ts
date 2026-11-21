@@ -30,19 +30,31 @@ export const routes: Routes = [
         path: 'accounts',
         title: 'Accounts',
         loadComponent: () =>
-          import('./features/accounts/accounts-page').then((m) => m.AccountsPage),
+          import('./features/accounts/accounts-list/accounts-page').then((m) => m.AccountsPage),
       },
+      // More specific account paths first: they share the `accounts/:accountId` prefix.
       {
-        path: 'accounts/:accountId',
-        title: 'Account',
-        loadComponent: () =>
-          import('./features/accounts/account-detail-page').then((m) => m.AccountDetailPage),
+        path: 'accounts/:accountId/orders/new',
+        title: 'New order',
+        loadComponent: () => import('./features/orders/new-order-page').then((m) => m.NewOrderPage),
       },
       {
         path: 'accounts/:accountId/orders/:orderId',
         title: 'Order',
         loadComponent: () =>
           import('./features/orders/order-detail-page').then((m) => m.OrderDetailPage),
+      },
+      {
+        path: 'accounts/:accountId',
+        title: 'Account',
+        loadComponent: () =>
+          import('./features/accounts/account-detail/account-detail-page').then(
+            (m) => m.AccountDetailPage,
+          ),
+        loadChildren: () =>
+          import('./features/accounts/account-detail/account-detail.routes').then(
+            (m) => m.ACCOUNT_TAB_ROUTES,
+          ),
       },
       {
         path: 'orders',

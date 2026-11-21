@@ -15,7 +15,8 @@ export type DateInput = string | number | Date;
 /**
  * Compact relative time for activity feeds and tables:
  * "just now", "3 min ago", "5 hr ago", "yesterday", "4 days ago", then "Nov 18"
- * (with the year when it differs). Future times read "in 3 min".
+ * (with the year when it differs). Future times read "in 3 min"; up to a minute
+ * ahead counts as clock skew and reads "just now".
  */
 export function formatRelativeTime(value: DateInput, now: number = Date.now()): string {
   const time = new Date(value).getTime();
@@ -27,8 +28,10 @@ export function formatRelativeTime(value: DateInput, now: number = Date.now()): 
   const elapsed = Math.abs(diff);
   const phrase = (amount: string) => (future ? `in ${amount}` : `${amount} ago`);
 
-  if (elapsed < 45_000) {
-    return future ? 'in a moment' : 'just now';
+  // `now` comes from a clock that ticks every 30 s, and server clocks drift, so a
+  // timestamp slightly ahead of it is a write that just happened, not a future one.
+  if (elapsed < 45_000 || (future && elapsed < MINUTE)) {
+    return 'just now';
   }
   if (elapsed < HOUR) {
     return phrase(`${Math.max(1, Math.round(elapsed / MINUTE))} min`);
@@ -52,4 +55,12 @@ export function formatRelativeTime(value: DateInput, now: number = Date.now()): 
 export function formatAbsoluteTime(value: DateInput): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : absolute.format(date);
+}
+
+const absoluteDate = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
+
+/** "Nov 21, 2026". */
+export function formatAbsoluteDate(value: DateInput): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : absoluteDate.format(date);
 }

@@ -1,0 +1,27 @@
+.mat-column-name {
+  width: 34%;
+  max-width: 0;
+}
+
+.mat-column-plan,
+.mat-column-status {
+  width: 13%;
+}
+
+.mat-column-sites,
+.mat-column-users {
+  width: 9%;
+}
+
+.mat-column-numbers {
+  width: 22%;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-space-3);
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
