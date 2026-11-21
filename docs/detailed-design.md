@@ -31,16 +31,18 @@ Both GSIs project all attributes. Every key is a string. Key builders live in
 
 ### Item types
 
-| Entity      | PK             | SK                           | GSI1PK / GSI1SK                              | GSI2PK / GSI2SK                 |
-| ----------- | -------------- | ---------------------------- | -------------------------------------------- | ------------------------------- |
-| Account     | `ACCOUNT#<id>` | `ACCOUNT`                    | `ACCOUNTS` / `<name>#<id>`                   |                                 |
-| Site        | `ACCOUNT#<id>` | `SITE#<siteId>`              |                                              |                                 |
-| User        | `ACCOUNT#<id>` | `USER#<userId>`              | `ACCOUNT#<id>#USERS` / `<last>#<first>#<id>` | `SITE#<siteId>#USERS` / same    |
-| Number      | `ACCOUNT#<id>` | `NUMBER#<e164>`              | `ACCOUNT#<id>#NUMBERS` / `<status>#<e164>`   | `SITE#<siteId>#NUMBERS` / same  |
-| Order       | `ACCOUNT#<id>` | `ORDER#<orderId>`            | `ORDERS` / `<orderId>`                       | `ORDERS#<status>` / `<orderId>` |
-| Guard       | `ACCOUNT#<id>` | `EMAIL#<email>`, `EXT#<ext>` |                                              |                                 |
-| Guard       | `MAC#<mac>`    | `MAC`                        |                                              |                                 |
-| Idempotency | `ACCOUNT#<id>` | `IDEMPOTENCY#<key>`          |                                              |                                 |
+| Entity       | PK                    | SK                           | GSI1PK / GSI1SK                              | GSI2PK / GSI2SK                 |
+| ------------ | --------------------- | ---------------------------- | -------------------------------------------- | ------------------------------- |
+| Account      | `ACCOUNT#<id>`        | `ACCOUNT`                    | `ACCOUNTS` / `<name>#<id>`                   |                                 |
+| Site         | `ACCOUNT#<id>`        | `SITE#<siteId>`              |                                              |                                 |
+| User         | `ACCOUNT#<id>`        | `USER#<userId>`              | `ACCOUNT#<id>#USERS` / `<last>#<first>#<id>` | `SITE#<siteId>#USERS` / same    |
+| Number       | `ACCOUNT#<id>`        | `NUMBER#<e164>`              | `ACCOUNT#<id>#NUMBERS` / `<status>#<e164>`   | `SITE#<siteId>#NUMBERS` / same  |
+| Order        | `ACCOUNT#<id>`        | `ORDER#<orderId>`            | `ORDERS` / `<orderId>`                       | `ORDERS#<status>` / `<orderId>` |
+| Guard        | `ACCOUNT#<id>`        | `EMAIL#<email>`, `EXT#<ext>` |                                              |                                 |
+| Guard        | `MAC#<mac>`           | `MAC`                        |                                              |                                 |
+| Idempotency  | `ACCOUNT#<id>`        | `IDEMPOTENCY#<key>`          |                                              |                                 |
+| Connection   | `CONNECTION#<connId>` | `CONNECTION`                 |                                              |                                 |
+| Subscription | `CONNECTION#<connId>` | `SUB#<accountId>`            | `SUBSCRIPTION#<accountId>` / `<connId>`      |                                 |
 
 Names in sort keys are lower-cased so lists sort naturally. Order ids are
 ULIDs (`ord_01J...`), so sorting by id is sorting by creation time.
@@ -86,6 +88,8 @@ stops two concurrent orders from handing out the same extension.
 | 17  | Claim an email or extension within an account | table | `PUT PK = ACCOUNT#a, SK = EMAIL#e / EXT#x` if not exists       | order workflow                      |
 | 18  | Claim a MAC address                           | table | `PUT PK = MAC#m, SK = MAC` if not exists                       | order workflow                      |
 | 19  | Find the order for an idempotency key         | table | `PK = ACCOUNT#a`, `SK = IDEMPOTENCY#k` (TTL 24 h)              | `POST /accounts/{id}/orders`        |
+| 20  | A connection and all its subscriptions        | table | `PK = CONNECTION#c`                                            | `$disconnect`, gone connections     |
+| 21  | Connections to notify about an account        | GSI1  | `GSI1PK = SUBSCRIPTION#a` and `SUBSCRIPTION#*`                 | `order-notifier`                    |
 
 Notes on the choices:
 
@@ -269,6 +273,32 @@ ProvisionLine writes the current step to the order before running it, so the
 UI shows "Creating voicemail box" while it happens. Every task is safe to run
 twice: finished lines are skipped and claims recognise resources the order
 already holds.
+
+### Live updates
+
+The web app keeps one WebSocket open (API Gateway WebSocket API, route
+selection `$request.body.action`; protocol in `packages/contracts/src/realtime.ts`):
+
+- **$connect** goes through `ws-authorizer.ts`, a Lambda REQUEST authorizer
+  that verifies the ID token from `?token=` (browsers cannot set headers on a
+  WebSocket handshake) and hands `sub`, `email` and `name` to `ws.ts` as
+  context. `ws.ts` stores a connection item with a TTL just over API
+  Gateway's two-hour connection limit.
+- **subscribe / unsubscribe** `{ action, accountId }` store or delete a
+  subscription item; `accountId: "*"` means every account (the all-orders
+  view). The server confirms with `{ type: "subscribed" }`. **ping** gets
+  `{ type: "pong" }`, which keeps idle connections open (API Gateway closes
+  them after 10 idle minutes).
+- **order-notifier** consumes the table stream, filtered to order items. The
+  new image is the whole order, so it needs no read: for each order in the
+  batch (only the latest image of each, so a burst of step updates becomes
+  one message) it looks up the subscribers of the order's account plus `*`
+  subscribers and calls `PostToConnection` with
+  `{ type: "order.updated", order }`. A `GoneException` deletes the
+  connection. Delivery is best effort: a failed send is logged and the batch
+  is not retried, because a retry would re-send to everyone else; clients
+  should re-fetch what they show when they reconnect. An order is capped at
+  100 lines so the message stays under API Gateway's 128 KB limit.
 
 ### Simulated provisioning
 
