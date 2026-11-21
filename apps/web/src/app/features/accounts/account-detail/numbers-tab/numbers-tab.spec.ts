@@ -40,10 +40,10 @@ describe('NumbersTab', () => {
     expect(request.params.get('status')).toBe('available');
     expect(page.host().querySelector('app-empty-state h2')?.textContent).toBe('No numbers match');
 
-    const reserved = [...page.host().querySelectorAll('mat-button-toggle button')].find(
-      (button) => button.textContent?.trim() === 'Reserved',
-    ) as HTMLButtonElement;
-    reserved.click();
+    const reserved = [...page.host().querySelectorAll('mat-chip-option')].find(
+      (chip) => chip.textContent?.trim() === 'Reserved',
+    );
+    reserved!.querySelector<HTMLElement>('.mdc-evolution-chip__action')!.click();
     await page.settle();
     expect(page.url()).toBe('/accounts/acc_northwind/numbers?site=site_kanata&status=reserved');
     expect(api.requestsTo('/accounts/acc_northwind/numbers').at(-1)?.params.get('status')).toBe(
