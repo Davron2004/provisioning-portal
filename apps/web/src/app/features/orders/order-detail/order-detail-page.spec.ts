@@ -11,7 +11,7 @@ import { FakeApi, provideFakeApi } from '../../../../testing/fake-api';
 import { anOrder } from '../../../../testing/fixtures';
 import { FakeRealtime, provideFakeRealtime } from '../../../../testing/realtime-fake';
 import { provideTestConfig } from '../../../../testing/test-config';
-import { latestOrder, optimisticRetry } from './live-order';
+import { latestOrder, latestRunStart, optimisticRetry } from './live-order';
 import { OrderDetailPage } from './order-detail-page';
 
 const ORDER_PATH = '/accounts/acc_northwind/orders/ord_0001';
@@ -81,6 +81,34 @@ describe('optimisticRetry', () => {
       ['pending', null],
     ]);
     expect(retried.counts).toMatchObject({ pending: 1, failed: 0, succeeded: 1 });
+  });
+});
+
+const event = (at: string, status: Order['status'] | null, message = '') => ({
+  at: `2026-11-21T${at}:00.000Z`,
+  status,
+  lineId: null,
+  message,
+});
+
+describe('latestRunStart', () => {
+  it('is the submission until the order is retried, then the retry', () => {
+    const firstRun = [
+      event('14:00', 'submitted'),
+      event('14:00', 'validating'),
+      event('14:01', 'provisioning'),
+      event('14:01', null, 'Line 2 failed'),
+      event('14:02', 'failed'),
+    ];
+    const createdAt = '2026-11-21T14:00:00.000Z';
+    expect(latestRunStart({ createdAt, events: firstRun })).toBe(createdAt);
+
+    const retried = [
+      ...firstRun,
+      event('16:30', 'provisioning', 'Retry of 1 failed line requested'),
+      event('16:31', 'active'),
+    ];
+    expect(latestRunStart({ createdAt, events: retried })).toBe('2026-11-21T16:30:00.000Z');
   });
 });
 
@@ -247,6 +275,33 @@ describe('OrderDetailPage', () => {
     );
     // And it re-reads the order, which may have moved on.
     expect(api.requestsTo(ORDER_PATH)).toHaveLength(2);
+  });
+
+  it('says how long the order took, and after a retry how long the retry took', async () => {
+    const first = await setUp(
+      anOrder({
+        ...failedOrder(),
+        events: [event('14:00', 'submitted'), event('14:02', 'failed')],
+      }),
+    );
+    expect(first.host.querySelector('.facts')?.textContent).toContain('Took 2 min');
+    TestBed.resetTestingModule();
+
+    const retried = await setUp(
+      anOrder({
+        status: 'active',
+        completedAt: '2026-11-23T12:26:20.000Z',
+        events: [
+          event('14:00', 'submitted'),
+          event('14:02', 'failed'),
+          { ...event('14:00', 'provisioning'), at: '2026-11-23T12:26:00.000Z' },
+          { ...event('14:00', 'active'), at: '2026-11-23T12:26:20.000Z' },
+        ],
+      }),
+    );
+    const facts = retried.host.querySelector('.facts')?.textContent ?? '';
+    expect(facts).toContain('Retry took 20 s');
+    expect(facts).not.toContain('Took 2 days');
   });
 
   it('lists lines as cards on phones', async () => {

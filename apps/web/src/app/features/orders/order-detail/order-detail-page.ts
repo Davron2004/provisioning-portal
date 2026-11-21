@@ -34,7 +34,7 @@ import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { StatusChip } from '../../../shared/ui/status-chip/status-chip';
 import { ActionBadge } from '../order-review/action-badge';
 import { LineStep } from './line-step';
-import { latestOrder, optimisticRetry, statusAnnouncement } from './live-order';
+import { latestOrder, latestRunStart, optimisticRetry, statusAnnouncement } from './live-order';
 import { OrderProgress } from './order-progress';
 import { OrderTimeline } from './order-timeline';
 
@@ -113,9 +113,15 @@ export class OrderDetailPage {
       { label: order?.title ?? 'Order' },
     ];
   });
+  /** How long the latest run took: the original one, or the retry of its failed lines. */
   protected readonly duration = computed(() => {
     const order = this.order();
-    return order?.completedAt ? formatDuration(order.createdAt, order.completedAt) : null;
+    if (!order?.completedAt) {
+      return null;
+    }
+    const start = latestRunStart(order);
+    const took = formatDuration(start, order.completedAt);
+    return start === order.createdAt ? `Took ${took}` : `Retry took ${took}`;
   });
   protected readonly liveLabel = computed(() => {
     switch (this.realtime.state()) {
