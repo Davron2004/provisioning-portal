@@ -171,6 +171,18 @@ describe('AssistantPage', () => {
     return { host, settle, type, button, navigate };
   };
 
+  it('keeps the account picker disabled until the accounts arrive', () => {
+    api = new FakeApi().hold('/accounts');
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideAppIcons(), provideTestConfig(), provideFakeApi(api)],
+    });
+    const fixture = TestBed.createComponent(AssistantPage);
+    fixture.detectChanges();
+    const select = (fixture.nativeElement as HTMLElement).querySelector('mat-select')!;
+    expect(select.getAttribute('aria-disabled')).toBe('true');
+    expect(select.textContent).toContain('Loading accounts');
+  });
+
   it('takes the account from the URL and offers examples that fit it', async () => {
     const { host } = await setUp();
     expect(host.querySelector('mat-select')?.textContent).toContain('Northwind Dental');
