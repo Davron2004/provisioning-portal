@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Site, VoiceUser } from '@provisioning/contracts';
-import { filterUsers } from '../../accounts/account-detail/users-tab/user-filter';
+import { matchUsers } from './user-match';
 import { UserChoice } from '../order-form/order-form';
 import { fieldError, watchControl } from './field-errors';
 
@@ -99,7 +99,7 @@ export class UserPicker {
     return typeof value === 'string' ? value.trim() : '';
   });
   protected readonly options = computed(() =>
-    filterUsers(this.users(), this.query()).slice(0, MAX_OPTIONS),
+    matchUsers(this.users(), this.query()).slice(0, MAX_OPTIONS),
   );
   protected readonly error = computed(() => {
     this.value();
