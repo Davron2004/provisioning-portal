@@ -402,11 +402,104 @@ container (`OPENSEARCH_AUTH=none`).
 
 ## Assistant
 
-TODO (filled in with #6).
+`POST /accounts/{id}/assistant/interpret` takes a plain-English request ("add
+20 users at the Kanata site with voicemail") and returns an
+`InterpretResponse`: the intent, the draft it resolved to, the same
+`OrderPreview` a manual order gets, and notes explaining each decision.
+Nothing is stored or provisioned; the client submits the previewed lines
+through `POST /orders` after the person approves them.
+
+```mermaid
+flowchart LR
+    T[Request text] --> P[IntentProvider]
+    P -->|OrderIntent| R[resolveIntent<br/>deterministic]
+    R -->|OrderDraft + notes| V[previewOrder<br/>same rules as manual]
+    V -->|OrderPreview| U[Person reviews]
+    U -->|approved lines| O[POST /orders]
+```
+
+**The model only produces an intent.** `OrderIntent` (contracts) is
+operations with free text as the person wrote it: a site name, people, a
+device, extensions. The model never sees users, numbers or ids, and cannot
+make anything happen; at worst it produces an intent that resolves to a
+preview the person rejects.
+
+**Deterministic resolution** (`src/assistant/resolve.ts`):
+
+- Sites: exact name, else every word of the query must match a word of one
+  site name (exact, prefix, or a one- or two-letter typo), so "Kanata" and
+  "Kanatta" become Kanata Campus. Two candidates are ambiguous and the
+  operation is skipped with a note naming both.
+- Devices: catalog names and ids first ("D400"), then keywords ("softphone",
+  "cordless", "conference", "color", "desk phone"). "none" removes a device.
+- People to change or remove: by extension, or by name (every word must
+  match; one match only, otherwise a note lists the candidates with their
+  extensions). "Everyone at <site>" needs a site. Users another order is
+  already changing, and users that already have the requested setting, are
+  left out with a note.
+- New users: named people get `first.last@<account domain>` unless an email
+  was given; unnamed seats get "New User 01", "New User 02"... with
+  `new.user.<site>.NN@<account domain>`, skipping addresses already taken.
+  Extensions and numbers are allocated by the normal preview.
+- More than 100 resulting lines returns no draft and a note to split the
+  request; parts of the text that are not orders come back as notes.
+
+**Providers** (`ASSISTANT_PROVIDER`, behind `IntentProvider`):
+
+| Provider    | Client                                                 | Model (default, `ASSISTANT_MODEL` overrides) | Auth                                                                |
+| ----------- | ------------------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------- |
+| `bedrock`   | `AnthropicBedrockMantle` (`@anthropic-ai/bedrock-sdk`) | `anthropic.claude-opus-5-5`                  | Lambda role, SigV4; needs `bedrock-mantle:CreateInference`          |
+| `anthropic` | `Anthropic` (`@anthropic-ai/sdk`)                      | `claude-opus-5-5`                            | API key from SSM (`ANTHROPIC_API_KEY_PARAM`) or `ANTHROPIC_API_KEY` |
+| `rules`     | none: a regex/keyword parser                           | none (`model: null`)                         | none                                                                |
+
+Both Claude providers make the same call: `messages.parse` with
+`output_config: { format: zodOutputFormat(LlmIntent), effort: 'low' }` and
+`max_tokens: 16000`, no `thinking`, `temperature` or forced `tool_choice`
+(Opus 5.5 rejects them). `LlmIntent` mirrors the contract's intent without the
+numeric limits structured outputs cannot enforce, plus field descriptions;
+`toOrderIntent()` moves anything out of range (for example 400 users) into
+`unresolved` rather than adjusting it, then validates against the contract.
+A refusal, a `max_tokens` stop, unparseable output or any SDK error becomes
+`502 assistant_unavailable` with a message telling the person to build the
+order by hand. The request text is capped at 2,000 characters by the
+contract, wrapped in `<request>` tags, and the system prompt says to treat it
+as data only.
+
+The `rules` provider handles the common phrasings (add N users / named people
+at a site with voicemail and a device, remove by extension or name, voicemail
+on/off for people or everyone at a site, give or switch devices). It is what
+local development, CI and E2E use, because they run without model
+credentials, and the response says `provider: "rules"`.
 
 ## Local development harness
 
-TODO (filled in with #7).
+`npm run start:local -w @provisioning/api` runs the real Lambda handlers on a
+laptop. Everything AWS-specific is either a local container or a small
+stand-in that speaks the same protocol, so the handler code is identical in
+both places. `--reset` drops the table and reseeds; `npm run seed` and
+`npm run reindex` do the two halves separately.
+
+| In AWS                                 | Locally                                                                                                 | How faithful                                                                                                                                                                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DynamoDB (table, GSIs, streams)        | DynamoDB Local container                                                                                | Same API, including streams and transactions. TTL is not enforced.                                                                                                                                                                                                         |
+| OpenSearch Service                     | OpenSearch 2.19 container, security plugin off                                                          | Same engine and queries; plain HTTP instead of SigV4 (`OPENSEARCH_AUTH=none`).                                                                                                                                                                                             |
+| API Gateway REST + Cognito authorizer  | HTTP server on `API_PORT` (`src/local/rest-gateway.ts`)                                                 | Builds `APIGatewayProxyEvent`s, verifies the bearer token and fills `requestContext.authorizer.claims`. 401 body matches the gateway response CDK configures.                                                                                                              |
+| Cognito user pool, hosted login        | `POST /auth/login` with demo operators, HS256 tokens                                                    | `admin@example.com` / `portal-demo` and `ops@example.com` / `portal-demo`. Tokens last 8 hours.                                                                                                                                                                            |
+| `config.json` next to the web app      | `GET /config.json`                                                                                      | `RuntimeConfig` with `auth.mode: "local"`.                                                                                                                                                                                                                                 |
+| API Gateway WebSocket API + authorizer | `ws` server on `WS_PORT` (`src/local/websocket-gateway.ts`)                                             | Runs `ws-authorizer.ts` on the upgrade and `ws.ts` for `$connect`, messages and `$disconnect`, with API-Gateway-shaped events and connection ids. No idle timeout, two-hour limit or frame limit (oversized messages are logged).                                          |
+| API Gateway Management API             | `/@connections/{id}` on `WS_PORT`                                                                       | POST, GET, DELETE; 410 `GoneException` for unknown ids, so `order-notifier` runs its real SDK client.                                                                                                                                                                      |
+| Lambda event source mappings (streams) | Poller (`src/local/streams-poller.ts`)                                                                  | Reads every shard, converts records to the Lambda event shape and applies the same `STREAM_FILTER_PATTERNS`. Starts at LATEST, a failed batch is logged and skipped (Lambda would retry), no checkpoint across restarts.                                                   |
+| Step Functions                         | Stand-in runner (`src/local/workflow-runner.ts`) and a `StartExecution` endpoint on a random local port | Same shape as the ASL, using its constants: ValidateOrder, Map with `MAP_MAX_CONCURRENCY`, `PROVISION_LINE_RETRY` with its backoff, Catch to RecordLineFailure, FinalizeOrder, failure routing to FinalizeOrder. No Lambda service retries, timeouts or execution history. |
+| Carrier, call server, device config    | Simulated in every environment (`SimulatedProvisioner`)                                                 | Not emulated: this project has no real provisioning backend anywhere.                                                                                                                                                                                                      |
+| Bedrock / Claude API                   | `rules` provider by default                                                                             | Set `ASSISTANT_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` to use Claude locally.                                                                                                                                                                                         |
+
+Startup waits for DynamoDB Local and OpenSearch, creates the table and the
+search index, seeds and indexes when the table is empty, then logs every
+endpoint. Ports come from `API_PORT`, `WS_PORT`, `DDB_PORT`, `OPENSEARCH_PORT`
+(defaults 3000, 3001, 8000, 9200) so parallel worktrees can run side by side;
+CORS allows `http://localhost:${WEB_PORT}` (default 4200) unless
+`CORS_ALLOWED_ORIGINS` is set. Simulated step timing and failure rate are
+`PROVISIONING_STEP_DELAY_MS` and `PROVISIONING_TRANSIENT_FAILURE_RATE`.
 
 ## Infrastructure
 
