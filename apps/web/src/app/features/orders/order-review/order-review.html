@@ -122,7 +122,7 @@
 
 <div class="footer">
   <button matButton="outlined" type="button" (click)="back.emit()" [disabled]="submitting()">
-    <mat-icon svgIcon="arrow_back" />
+    <mat-icon [svgIcon]="backIcon()" />
     {{ backLabel() }}
   </button>
   <ng-content select="[review-note]" />

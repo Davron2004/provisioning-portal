@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DeviceModel, OrderDraft, OrderPreview, Site } from '@provisioning/contracts';
 import { toApiProblem } from '../../../core/api/api-problem';
+import { AppIcon } from '../../../core/icons/icons';
 import { countOf } from '../../../shared/format/labels';
 import { HANDSET_LAYOUT, injectMediaQuery } from '../../../shared/layout/media-query';
 import { ActionBadge } from './action-badge';
@@ -49,6 +50,7 @@ export class OrderReview {
   readonly submitError = input<unknown>(null);
   readonly submitLabel = input('Submit order');
   readonly backLabel = input('Back to edit');
+  readonly backIcon = input<AppIcon>('arrow_back');
 
   readonly back = output();
   readonly submitOrder = output();
