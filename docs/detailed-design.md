@@ -354,6 +354,52 @@ sequenceDiagram
     WS-->>UI: order.updated (full Order)
 ```
 
+## Search
+
+`GET /search?q=&entity=&accountId=&limit=` searches users, numbers and orders
+in one OpenSearch index (`OPENSEARCH_INDEX`, default `provisioning`).
+
+**One index, `entity` field.** The search box queries everything at once and
+ranks it together; one index does that in one request. Separate indexes per
+entity would need a multi-search and score merging, and the three document
+types share almost all fields anyway. Each document has `entity`, `id`,
+`accountId`, `accountName`, `title`, `subtitle`, `status`, `text`, `digits`
+and `updatedAt` (`src/search/documents.ts`).
+
+**Mappings** (`src/search/index-definition.ts`, `dynamic: strict`):
+
+| Field      | Type / analyzer                                  | Why                                                     |
+| ---------- | ------------------------------------------------ | ------------------------------------------------------- |
+| `title`    | `search_as_you_type`, lower-cased, accent-folded | Names and order titles match as you type ("sof")        |
+| `subtitle` | text, folded                                     | Extension, formatted number, site                       |
+| `text`     | text, split on non-alphanumerics, folded         | Email, site, account, order id, prompt, names in orders |
+| `digits`   | 3-11 character n-grams of digit strings          | "0142", "5550142", "+1 613 555 0142" all find a number  |
+| others     | keyword / date                                   | Filters and display                                     |
+
+**Query.** `bool_prefix` over the title subfields (boosted), `bool_prefix` over
+`subtitle` and `text`, and, when the query has three or more digits, a term
+query of just its digits on `digits`. `entity` and `accountId` are filters.
+
+**Highlighting.** OpenSearch wraps matches in two private-use characters; the
+API HTML-escapes the fragment and then turns those characters into `<mark>`
+and `</mark>`. Names and prompts are user input, so nothing else can survive
+as markup. (Control characters do not work as markers: the highlighter trims
+fragments with Java's `trim()`, which strips them.)
+
+**Keeping it current.** `search-indexer` consumes the table stream (filtered to
+users, numbers and orders, removals included), builds documents (looking up
+site, account and user names, cached per batch) and sends one bulk request per
+batch with only the last change per document. A failed bulk item fails the
+batch so Lambda retries it; index and delete are idempotent. The index is
+created with its mappings on first use. `reindexAll()` (`npm run reindex -w
+@provisioning/api` locally) rebuilds it from a table scan; the harness runs it
+after seeding. Before the index exists `/search` returns no results rather
+than an error.
+
+In AWS the client signs requests with SigV4 (`OPENSEARCH_AUTH=sigv4`,
+`OPENSEARCH_SERVICE=es` or `aoss`); locally it talks plain HTTP to the
+container (`OPENSEARCH_AUTH=none`).
+
 ## Assistant
 
 TODO (filled in with #6).

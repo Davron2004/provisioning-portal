@@ -30,6 +30,7 @@ docker compose up -d                # DynamoDB Local :8000, OpenSearch :9200
 npm run start:local -w @provisioning/api   # API + WebSocket harness, seeds demo data
 npm run start:local -w @provisioning/api -- --reset   # drop the local table and reseed
 npm run test:integration -w @provisioning/api         # against DynamoDB Local / OpenSearch
+npm run reindex -w @provisioning/api                  # rebuild the local search index
 npm start -w @provisioning/web      # Angular dev server
 npm run lint                        # ESLint + Prettier, whole repo
 npm run typecheck                   # every workspace
@@ -113,6 +114,8 @@ Environment variables read by the handlers: `TABLE_NAME`, `OPENSEARCH_ENDPOINT`,
 (`debug` | `info` | `warn` | `error` | `silent`). The workflow Lambdas also read
 `PROVISIONING_TRANSIENT_FAILURE_RATE` (default `0.1`) and
 `PROVISIONING_STEP_DELAY_MS` (default `1000-3000`) for the simulated provisioner.
+Search reads `OPENSEARCH_INDEX` (default `provisioning`), `OPENSEARCH_AUTH`
+(`sigv4` default, `none` locally) and `OPENSEARCH_SERVICE` (`es` | `aoss`).
 
 Local-only overrides (set by the harness, never in AWS): `DYNAMODB_ENDPOINT`,
 `SFN_ENDPOINT`, `LOCAL_JWT_SECRET`. Local demo login: `admin@example.com` / `portal-demo`.

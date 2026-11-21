@@ -49,6 +49,7 @@ export function applyHandlerEnvironment(config: LocalConfig, extra: Record<strin
     TABLE_NAME: config.tableName,
     DYNAMODB_ENDPOINT: config.dynamoEndpoint,
     OPENSEARCH_ENDPOINT: config.openSearchEndpoint,
+    OPENSEARCH_AUTH: 'none',
     AUTH_MODE: 'local',
     AWS_REGION: config.region,
     CORS_ALLOWED_ORIGINS: config.allowedOrigins.join(','),

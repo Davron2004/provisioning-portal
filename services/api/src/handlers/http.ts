@@ -6,6 +6,9 @@ import { createApi } from '../http/api';
 import type { HttpApp } from '../http/app';
 import { newOrderId } from '../lib/ids';
 import { OrderService } from '../orders/order-service';
+import { sharedSearchClient } from '../search/client';
+import { searchIndexName } from '../search/index-definition';
+import { SearchService } from '../search/search-service';
 import { stepFunctionsStarterFromEnv } from '../workflow/starter';
 
 /**
@@ -23,7 +26,8 @@ function init(): HttpApp {
     now,
     newOrderId,
   });
-  return createApi({ ...repos, orderService, now }, listEnv('CORS_ALLOWED_ORIGINS', ['*']));
+  const search = new SearchService(sharedSearchClient(), searchIndexName());
+  return createApi({ ...repos, orderService, search, now }, listEnv('CORS_ALLOWED_ORIGINS', ['*']));
 }
 
 export const handler = (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

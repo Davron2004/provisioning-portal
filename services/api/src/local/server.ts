@@ -4,6 +4,9 @@ import { createLocalVerifier } from '../auth/tokens';
 import { createDocumentClient } from '../data/client';
 import { applyHandlerEnvironment, loadLocalConfig } from './config';
 import { log } from './log';
+import { indexIsEmpty, rebuildSearchIndex, waitForOpenSearch } from './opensearch';
+import { createSearchClient } from '../search/client';
+import { searchIndexName } from '../search/index-definition';
 import { createRestGateway } from './rest-gateway';
 import { isTableEmpty, seedDatabase } from './seed';
 import { startStepFunctionsStandIn } from './step-functions';
@@ -14,7 +17,7 @@ import { STREAM_FILTER_PATTERNS } from '../streams/records';
 
 /**
  * Local development harness: runs the real Lambda handlers on a laptop
- * against DynamoDB Local. See
+ * against DynamoDB Local and OpenSearch. See
  * docs/detailed-design.md, "Local development harness".
  *
  *   npm run start:local -w @provisioning/api            # seed if the table is empty
@@ -27,8 +30,14 @@ async function main() {
 
   const doc = createDocumentClient({ endpoint: config.dynamoEndpoint, region: config.region });
   log.info(`DynamoDB Local at ${config.dynamoEndpoint}, table ${config.tableName}`);
+  const search = createSearchClient();
+  await waitForOpenSearch(search, config.openSearchEndpoint);
+  log.info(`OpenSearch at ${config.openSearchEndpoint}, index ${searchIndexName()}`);
+
   const created = await ensureTable(doc, config.tableName, { reset });
+  let seeded = false;
   if (created || (await isTableEmpty(doc, config.tableName))) {
+    seeded = true;
     const data = await seedDatabase(doc, config.tableName);
     log.info(
       `Seeded ${data.accounts.length} accounts, ${data.sites.length} sites, ${data.users.length} users, ` +
@@ -36,6 +45,14 @@ async function main() {
     );
   } else {
     log.info('Table already has data; pass --reset to reseed');
+  }
+  if (seeded || (await indexIsEmpty(search, searchIndexName()))) {
+    await rebuildSearchIndex({
+      doc,
+      tableName: config.tableName,
+      search,
+      index: searchIndexName(),
+    });
   }
 
   // Handlers are imported after the environment is set, as a Lambda would see it.
@@ -64,10 +81,11 @@ async function main() {
 
   // WebSocket API + Management API on one port, as API Gateway serves both from one domain.
   process.env.WS_MANAGEMENT_ENDPOINT = `http://localhost:${config.wsPort}`;
-  const [ws, wsAuthorizer, orderNotifier] = await Promise.all([
+  const [ws, wsAuthorizer, orderNotifier, searchIndexer] = await Promise.all([
     import('../handlers/ws'),
     import('../handlers/ws-authorizer'),
     import('../handlers/streams/order-notifier'),
+    import('../handlers/streams/search-indexer'),
   ]);
   const wsServer = await startWebSocketGateway({
     port: config.wsPort,
@@ -87,9 +105,14 @@ async function main() {
         filterPatterns: STREAM_FILTER_PATTERNS.orderNotifier,
         handler: orderNotifier.handler,
       },
+      {
+        name: 'search-indexer',
+        filterPatterns: STREAM_FILTER_PATTERNS.searchIndexer,
+        handler: searchIndexer.handler,
+      },
     ],
   });
-  log.info('Polling the table stream for order-notifier');
+  log.info('Polling the table stream for order-notifier and search-indexer');
 
   const apiBase = `http://${config.host}:${config.apiPort}`;
   const runtimeConfig: RuntimeConfig = {
