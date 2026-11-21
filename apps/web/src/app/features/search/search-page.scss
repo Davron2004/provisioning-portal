@@ -1,0 +1,134 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  width: min(720px, 100%);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-2) var(--app-space-4);
+}
+
+.count {
+  margin-left: 6px;
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 400;
+}
+
+.summary {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.progress {
+  height: 4px;
+  margin: var(--app-space-3) 0 var(--app-space-4);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-2);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-6);
+  transition: opacity var(--app-duration-short) var(--app-ease-standard);
+
+  &.stale {
+    opacity: 0.6;
+  }
+}
+
+.group {
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-2);
+    margin-bottom: var(--app-space-2);
+    font: var(--mat-sys-title-small);
+
+    mat-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius-lg);
+    overflow: hidden;
+  }
+
+  li + li {
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+}
+
+.hit {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-3);
+  min-height: 60px;
+  padding: var(--app-space-2) var(--app-space-3) var(--app-space-2) var(--app-space-5);
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
+  transition: background-color var(--app-duration-short) var(--app-ease-standard);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-low);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: -2px;
+    background: var(--mat-sys-surface-container-low);
+  }
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font: var(--mat-sys-body-large);
+  font-weight: 500;
+}
+
+.subtitle,
+.matched {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.go {
+  flex: none;
+  color: var(--mat-sys-outline);
+}
+
+@media (max-width: 599.98px) {
+  .hit {
+    padding-left: var(--app-space-4);
+  }
+
+  .hit app-status-chip {
+    display: none;
+  }
+}

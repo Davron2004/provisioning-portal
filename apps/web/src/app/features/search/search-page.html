@@ -1,0 +1,137 @@
+<app-page-header title="Search" subtitle="Users, numbers and orders across every account." />
+
+<div class="box" role="search">
+  <mat-form-field class="field" subscriptSizing="fixed">
+    <mat-icon matPrefix svgIcon="search" aria-hidden="true" />
+    <input
+      #box
+      matInput
+      type="search"
+      autocomplete="off"
+      enterkeyhint="search"
+      aria-label="Search query"
+      placeholder="Name, email, extension, phone number or order"
+      [value]="search.text()"
+      (input)="search.set(box.value)"
+      (keydown.arrowdown)="focusFirstResult($event)"
+    />
+    @if (search.text()) {
+      <button matIconSuffix matIconButton type="button" aria-label="Clear search" (click)="clear()">
+        <mat-icon svgIcon="close" />
+      </button>
+    }
+  </mat-form-field>
+</div>
+
+@let s = state();
+@if (s) {
+  <div class="bar">
+    <mat-chip-listbox
+      aria-label="Show"
+      [value]="entityFilter() ?? ''"
+      (change)="setEntity($event.value)"
+      hideSingleSelectionIndicator
+    >
+      <mat-chip-option value="">
+        All
+        @if (s.all) {
+          <span class="count app-numeric">{{ s.all.hits.length }}</span>
+        }
+      </mat-chip-option>
+      @for (entity of entities; track entity) {
+        <mat-chip-option [value]="entity">
+          {{ groups[entity].label }}
+          @if (s.all) {
+            <span class="count app-numeric">{{ counts()[entity] }}</span>
+          }
+        </mat-chip-option>
+      }
+    </mat-chip-listbox>
+    <p class="summary app-numeric" aria-live="polite">{{ s.loading ? 'Searching…' : summary() }}</p>
+  </div>
+}
+
+<div class="progress">
+  @if (s?.loading) {
+    <mat-progress-bar mode="indeterminate" aria-label="Searching" />
+  }
+</div>
+
+@if (!s) {
+  <app-empty-state
+    icon="search"
+    heading="Search everything"
+    message="Find users by name, email or extension, numbers by any of their digits (“0142”, “613 555”), and orders by title or request."
+  />
+} @else if (s.error) {
+  <app-error-state heading="Search did not work" [error]="s.error" (retry)="retry()" />
+} @else if (!s.shown) {
+  <div class="loading" aria-hidden="true">
+    @for (row of [1, 2, 3, 4]; track row) {
+      <app-skeleton height="56px" />
+    }
+  </div>
+} @else if (hits().length === 0) {
+  <app-empty-state
+    icon="search"
+    [heading]="'No matches for “' + s.query.q + '”'"
+    [message]="
+      entityFilter()
+        ? 'Nothing of this kind matches. Try all results, or fewer letters.'
+        : 'Check the spelling, try part of a name, or the last digits of a number.'
+    "
+  >
+    @if (entityFilter()) {
+      <button matButton="outlined" type="button" (click)="setEntity(null)">Show all results</button>
+    }
+  </app-empty-state>
+} @else {
+  <div #results class="results" [class.stale]="s.loading">
+    @for (group of grouped(); track group.entity) {
+      <section class="group" [attr.aria-labelledby]="'group-' + group.entity">
+        <h2 [id]="'group-' + group.entity">
+          <mat-icon [svgIcon]="groups[group.entity].icon" aria-hidden="true" />
+          {{ groups[group.entity].label }}
+          <span class="count app-numeric">{{ group.hits.length }}</span>
+        </h2>
+        <ul>
+          @for (hit of group.hits; track hit.entity + hit.id) {
+            @let to = link(hit);
+            @let status = knownStatus(hit.status);
+            <li>
+              <a class="hit" [routerLink]="to.commands" [queryParams]="to.queryParams">
+                @let on = highlightOn(hit);
+                <span class="main">
+                  <span class="title" [class.app-numeric]="hit.entity === 'number'">
+                    @if (on === 'title') {
+                      <app-highlighted-text [fragment]="hit.highlight!" />
+                    } @else {
+                      {{ hit.title }}
+                    }
+                  </span>
+                  <span class="subtitle app-numeric">
+                    @if (on === 'subtitle') {
+                      <app-highlighted-text [fragment]="hit.highlight!" />
+                    } @else {
+                      {{ hit.subtitle }}
+                    }
+                    · {{ hit.accountName }}
+                  </span>
+                  @if (on === 'extra') {
+                    <span class="matched">
+                      <app-highlighted-text [fragment]="hit.highlight!" />
+                    </span>
+                  }
+                </span>
+                @if (status) {
+                  <app-status-chip [status]="status" />
+                }
+                <mat-icon class="go" svgIcon="chevron_right" aria-hidden="true" />
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+}
