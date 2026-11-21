@@ -6,6 +6,7 @@ import { applyHandlerEnvironment, loadLocalConfig } from './config';
 import { log } from './log';
 import { createRestGateway } from './rest-gateway';
 import { isTableEmpty, seedDatabase } from './seed';
+import { startStepFunctionsStandIn } from './step-functions';
 import { ensureTable } from './table-setup';
 
 /**
@@ -34,7 +35,28 @@ async function main() {
     log.info('Table already has data; pass --reset to reseed');
   }
 
-  // Imported after the environment is set, as a Lambda would see it.
+  // Handlers are imported after the environment is set, as a Lambda would see it.
+  const [validateOrder, provisionLine, finalizeOrder] = await Promise.all([
+    import('../handlers/workflow/validate-order'),
+    import('../handlers/workflow/provision-line'),
+    import('../handlers/workflow/finalize-order'),
+  ]);
+  const sfn = await startStepFunctionsStandIn(
+    {
+      validateOrder: validateOrder.handler,
+      provisionLine: provisionLine.handler,
+      finalizeOrder: finalizeOrder.handler,
+    },
+    config.region,
+  );
+  process.env.SFN_ENDPOINT = sfn.endpoint;
+  process.env.STATE_MACHINE_ARN = sfn.stateMachineArn;
+  log.info(
+    `Step Functions stand-in on ${sfn.endpoint} (provisioning is simulated: ` +
+      `${process.env.PROVISIONING_STEP_DELAY_MS ?? '1000-3000'} ms per step, ` +
+      `transient failure rate ${process.env.PROVISIONING_TRANSIENT_FAILURE_RATE ?? '0.1'})`,
+  );
+
   const { handler: httpHandler } = await import('../handlers/http');
 
   const apiBase = `http://${config.host}:${config.apiPort}`;
@@ -63,6 +85,7 @@ async function main() {
   const shutdown = () => {
     log.info('Shutting down');
     api.close();
+    sfn.server.close();
     process.exit(0);
   };
   process.on('SIGINT', shutdown);

@@ -4,6 +4,9 @@ import { sharedDocumentClient } from '../data/client';
 import { createRepositories } from '../data/repositories';
 import { createApi } from '../http/api';
 import type { HttpApp } from '../http/app';
+import { newOrderId } from '../lib/ids';
+import { OrderService } from '../orders/order-service';
+import { stepFunctionsStarterFromEnv } from '../workflow/starter';
 
 /**
  * REST API entry point: one Lambda behind an API Gateway REST API with proxy
@@ -13,7 +16,14 @@ let app: HttpApp | undefined;
 
 function init(): HttpApp {
   const repos = createRepositories(sharedDocumentClient(), requireEnv('TABLE_NAME'));
-  return createApi({ ...repos, now: () => new Date() }, listEnv('CORS_ALLOWED_ORIGINS', ['*']));
+  const now = () => new Date();
+  const orderService = new OrderService({
+    repos,
+    workflow: stepFunctionsStarterFromEnv(requireEnv('STATE_MACHINE_ARN')),
+    now,
+    newOrderId,
+  });
+  return createApi({ ...repos, orderService, now }, listEnv('CORS_ALLOWED_ORIGINS', ['*']));
 }
 
 export const handler = (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

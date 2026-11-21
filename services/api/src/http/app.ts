@@ -67,8 +67,8 @@ export function createHttpApp(router: Router, options: HttpAppOptions): HttpApp 
   };
 }
 
-function parseJson(body: string | null, base64: boolean): unknown {
-  if (body === null || body === '') return undefined;
+function parseJson(body: string | null | undefined, base64: boolean): unknown {
+  if (body === null || body === undefined || body === '') return undefined;
   const text = base64 ? Buffer.from(body, 'base64').toString('utf8') : body;
   try {
     return JSON.parse(text) as unknown;

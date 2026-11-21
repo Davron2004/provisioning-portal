@@ -110,7 +110,9 @@ Environment variables read by the handlers: `TABLE_NAME`, `OPENSEARCH_ENDPOINT`,
 `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `ASSISTANT_PROVIDER`
 (`bedrock` | `anthropic` | `rules`), `ASSISTANT_MODEL`, `ANTHROPIC_API_KEY_PARAM`,
 `CORS_ALLOWED_ORIGINS` (comma-separated, default `*`), `LOG_LEVEL`
-(`debug` | `info` | `warn` | `error` | `silent`).
+(`debug` | `info` | `warn` | `error` | `silent`). The workflow Lambdas also read
+`PROVISIONING_TRANSIENT_FAILURE_RATE` (default `0.1`) and
+`PROVISIONING_STEP_DELAY_MS` (default `1000-3000`) for the simulated provisioner.
 
 Local-only overrides (set by the harness, never in AWS): `DYNAMODB_ENDPOINT`,
-`LOCAL_JWT_SECRET`. Local demo login: `admin@example.com` / `portal-demo`.
+`SFN_ENDPOINT`, `LOCAL_JWT_SECRET`. Local demo login: `admin@example.com` / `portal-demo`.

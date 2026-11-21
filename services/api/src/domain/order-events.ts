@@ -9,7 +9,8 @@ export const orderMessages = {
   provisioning: (lines: number) => `Provisioning ${plural(lines, 'line')}`,
   lineRejected: (label: string, reason: string) => `${label} rejected: ${reason}`,
   lineSucceeded: (label: string) => `${label} provisioned`,
-  lineRetrying: (label: string, reason: string) => `${label}: ${reason}; retrying`,
+  lineTransientError: (label: string, reason: string, attempt: number) =>
+    `${label}: ${reason} (attempt ${attempt})`,
   lineFailed: (label: string, reason: string) => `${label} failed: ${reason}`,
   completed: (total: number) => `Order completed: all ${plural(total, 'line')} provisioned`,
   failed: (failed: number, total: number) =>
