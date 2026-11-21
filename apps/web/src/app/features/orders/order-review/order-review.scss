@@ -1,0 +1,237 @@
+:host {
+  --_add: var(--app-status-success-accent);
+  --_change: var(--app-status-info-accent);
+  --_remove: var(--app-status-error-accent);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-4);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-3);
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.count {
+  height: 32px;
+  padding: 0 14px 0 10px;
+  font: var(--mat-sys-label-large);
+
+  &.zero {
+    background: var(--mat-sys-surface-container);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.verdict,
+.submit-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-space-2);
+
+  mat-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.verdict {
+  font: var(--mat-sys-title-small);
+  color: var(--app-status-success-fg);
+
+  &.blocked {
+    color: var(--app-status-error-fg);
+  }
+}
+
+.order-issues {
+  padding: var(--app-space-3) var(--app-space-4);
+  border-radius: var(--app-radius-lg);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.diff {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+
+  th,
+  td {
+    padding: var(--app-space-3);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th {
+    height: 44px;
+    padding-block: 0;
+    vertical-align: middle;
+    background: var(--mat-sys-surface-container-low);
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+    white-space: nowrap;
+  }
+
+  tbody {
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  // The accent bar on the left says add, change or remove before the badge is read.
+  tbody td:first-child {
+    box-shadow: inset 3px 0 0 var(--_accent);
+  }
+
+  tbody[data-action='add_user'] {
+    --_accent: var(--_add);
+  }
+
+  tbody[data-action='update_user'] {
+    --_accent: var(--_change);
+  }
+
+  tbody[data-action='remove_user'] {
+    --_accent: var(--_remove);
+  }
+
+  tbody[data-severity='error'] {
+    background: color-mix(in srgb, var(--app-status-error-bg) 45%, transparent);
+  }
+
+  .num {
+    width: 48px;
+    padding-left: var(--app-space-5);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .who {
+    min-width: 200px;
+    font-weight: inherit;
+  }
+
+  .issues-row td {
+    padding-top: 0;
+  }
+}
+
+.name {
+  display: block;
+  font-weight: 500;
+
+  &.struck {
+    text-decoration: line-through;
+    color: var(--app-status-error-fg);
+  }
+}
+
+.email {
+  display: block;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.card {
+  border-left: 4px solid var(--_accent);
+
+  &[data-action='add_user'] {
+    --_accent: var(--_add);
+  }
+
+  &[data-action='update_user'] {
+    --_accent: var(--_change);
+  }
+
+  &[data-action='remove_user'] {
+    --_accent: var(--_remove);
+  }
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.line-no {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.auto-sample {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: var(--app-radius-sm);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-small);
+  font-weight: 600;
+}
+
+.submit-error {
+  padding: var(--app-space-3) var(--app-space-4);
+  border-radius: var(--app-radius-md);
+  background: var(--app-status-error-bg);
+  color: var(--app-status-error-fg);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-space-3);
+  padding-top: var(--app-space-4);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  .spacer {
+    flex: 1;
+  }
+
+  .hint {
+    font: var(--mat-sys-body-small);
+    color: var(--app-status-error-fg);
+  }
+
+  mat-spinner {
+    display: inline-block;
+    margin-inline-end: var(--app-space-2);
+  }
+}
+
+@media (max-width: 599.98px) {
+  .footer {
+    .spacer {
+      display: none;
+    }
+
+    button,
+    .hint {
+      flex: 1 1 100%;
+    }
+
+    .submit {
+      order: -1;
+    }
+  }
+}
