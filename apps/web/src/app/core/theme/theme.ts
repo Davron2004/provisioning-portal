@@ -10,6 +10,15 @@ export const THEME_STORAGE_KEY = 'pp.theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /**
+ * The page surface (`--mat-sys-surface`) of each theme, for the browser's own UI
+ * (`<meta name="theme-color">` in index.html, and the web manifest).
+ */
+export const THEME_COLORS: Readonly<Record<ResolvedTheme, string>> = {
+  light: '#f6fafe',
+  dark: '#101417',
+};
+
+/**
  * Light, dark, or follow the OS. The choice lives in localStorage and on
  * <html data-theme>, which flips the CSS `color-scheme` that every token reads.
  */
@@ -40,12 +49,25 @@ export class ThemeService {
       } else {
         root.setAttribute('data-theme', mode);
       }
+      this.syncThemeColor(mode);
       this.store(mode);
     });
   }
 
   setMode(mode: ThemeMode): void {
     this.mode.set(mode);
+  }
+
+  /**
+   * index.html has one theme-color per OS scheme. A chosen theme overrides both, so the
+   * browser's toolbar matches the page; "system" puts each back to its own scheme.
+   */
+  private syncThemeColor(mode: ThemeMode): void {
+    const metas = this.document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
+    for (const meta of metas) {
+      const scheme: ResolvedTheme = meta.media.includes('dark') ? 'dark' : 'light';
+      meta.content = THEME_COLORS[mode === 'system' ? scheme : mode];
+    }
   }
 
   private readStoredMode(): ThemeMode {

@@ -5,9 +5,18 @@
     <title>Provisioning Portal</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Service delivery portal for a cloud phone provider." />
+    <meta
+      name="description"
+      content="Provision users, extensions, numbers and devices for cloud phone customers, and follow every order live."
+    />
     <meta name="color-scheme" content="light dark" />
+    <!-- The page surface behind the toolbar; ThemeService keeps these in step with the theme toggle. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6fafe" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101417" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
     <!-- Applies a stored light/dark choice before first paint, so the page never flashes the wrong theme. -->
     <script src="theme-init.js"></script>
   </head>

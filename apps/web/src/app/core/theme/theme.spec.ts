@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { THEME_STORAGE_KEY, ThemeService } from './theme';
+import { THEME_COLORS, THEME_STORAGE_KEY, ThemeService } from './theme';
 
 describe('ThemeService', () => {
   let root: HTMLElement;
@@ -41,6 +41,31 @@ describe('ThemeService', () => {
 
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
     expect(root.hasAttribute('data-theme')).toBe(false);
+  });
+
+  it('keeps the browser toolbar color in step with the chosen theme', () => {
+    const document = TestBed.inject(DOCUMENT);
+    const meta = (scheme: string) => {
+      const element = document.createElement('meta');
+      element.name = 'theme-color';
+      element.media = `(prefers-color-scheme: ${scheme})`;
+      element.content = THEME_COLORS[scheme as 'light' | 'dark'];
+      document.head.append(element);
+      return element;
+    };
+    const light = meta('light');
+    const dark = meta('dark');
+    const theme = TestBed.inject(ThemeService);
+
+    theme.setMode('dark');
+    TestBed.tick();
+    expect([light.content, dark.content]).toEqual([THEME_COLORS.dark, THEME_COLORS.dark]);
+
+    theme.setMode('system');
+    TestBed.tick();
+    expect([light.content, dark.content]).toEqual([THEME_COLORS.light, THEME_COLORS.dark]);
+    light.remove();
+    dark.remove();
   });
 
   it('ignores an unknown stored value', () => {
