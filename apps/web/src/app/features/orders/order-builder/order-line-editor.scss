@@ -1,0 +1,141 @@
+:host {
+  --_accent: var(--app-status-success-accent);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-3);
+  padding: var(--app-space-3) var(--app-space-5) var(--app-space-4);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-left: 4px solid var(--_accent);
+  border-radius: var(--app-radius-lg);
+  background: var(--mat-sys-surface);
+}
+
+:host([data-action='update_user']) {
+  --_accent: var(--app-status-info-accent);
+}
+
+:host([data-action='remove_user']) {
+  --_accent: var(--app-status-error-accent);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-2);
+  margin-right: calc(-1 * var(--app-space-3));
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-3);
+  font: var(--mat-sys-title-small);
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-2);
+
+  mat-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--_accent);
+  }
+}
+
+.line-no {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tools {
+  display: flex;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--app-space-3) var(--app-space-4);
+  align-items: start;
+}
+
+// Keep a focused field clear of the sticky footer of the page.
+.fields > *,
+.contents > * {
+  scroll-margin-block: var(--app-space-10) 160px;
+}
+
+.contents {
+  display: contents;
+}
+
+.wide {
+  grid-column: span 2;
+}
+
+.gap {
+  @media (max-width: 1199.98px) {
+    display: none;
+  }
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+}
+
+.mac {
+  text-transform: uppercase;
+
+  &::placeholder {
+    text-transform: none;
+  }
+}
+
+.current {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.current-label {
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+}
+
+.line-error {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  font: var(--mat-sys-body-small);
+  color: var(--app-status-error-fg);
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599.98px) {
+  :host {
+    padding: var(--app-space-2) var(--app-space-4) var(--app-space-4);
+  }
+
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wide {
+    grid-column: auto;
+  }
+}

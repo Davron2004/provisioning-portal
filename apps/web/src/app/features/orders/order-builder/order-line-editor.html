@@ -1,0 +1,169 @@
+<div class="head">
+  <h3 class="title" [id]="'line-' + index() + '-title'">
+    <span class="kind">
+      <mat-icon [svgIcon]="kind().icon" aria-hidden="true" />
+      {{ kind().label }}
+    </span>
+    <span class="line-no app-numeric">Line {{ index() + 1 }}</span>
+  </h3>
+  <div class="tools">
+    @if (canDuplicate()) {
+      <button
+        matIconButton
+        type="button"
+        matTooltip="Duplicate line"
+        [attr.aria-label]="'Duplicate line ' + (index() + 1)"
+        (click)="duplicate.emit()"
+      >
+        <mat-icon svgIcon="content_copy" />
+      </button>
+    }
+    <button
+      matIconButton
+      type="button"
+      matTooltip="Remove line"
+      [attr.aria-label]="'Remove line ' + (index() + 1)"
+      (click)="remove.emit()"
+    >
+      <mat-icon svgIcon="delete" />
+    </button>
+  </div>
+</div>
+
+<div class="fields" [formGroup]="line()">
+  @if (add(); as a) {
+    <mat-form-field>
+      <mat-label>First name</mat-label>
+      <input matInput formControlName="firstName" autocomplete="off" data-autofocus />
+      <mat-error>{{ error(a.controls.firstName, 'First name') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Last name</mat-label>
+      <input matInput formControlName="lastName" autocomplete="off" (blur)="suggestEmailFor(a)" />
+      <mat-error>{{ error(a.controls.lastName, 'Last name') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field class="wide">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="off" />
+      <mat-error>{{ error(a.controls.email, 'Email') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field hideRequiredMarker>
+      <mat-label>Site</mat-label>
+      <mat-select formControlName="siteId">
+        @for (site of sites(); track site.id) {
+          <mat-option [value]="site.id">{{ site.name }}</mat-option>
+        }
+      </mat-select>
+      <mat-error>{{ error(a.controls.siteId, 'Site') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field floatLabel="always">
+      <mat-label>Extension</mat-label>
+      <input
+        matInput
+        formControlName="extension"
+        inputmode="numeric"
+        autocomplete="off"
+        placeholder="Auto"
+        class="app-numeric"
+      />
+      @if (site(); as s) {
+        <mat-hint class="app-numeric"
+          >Blank: next free in {{ s.extensionRange.start }}–{{ s.extensionRange.end }}</mat-hint
+        >
+      } @else {
+        <mat-hint>Blank: next free one</mat-hint>
+      }
+      <mat-error>{{ error(a.controls.extension, 'Extension') }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Number</mat-label>
+      <mat-select formControlName="did">
+        <mat-option value="">Next available (auto)</mat-option>
+        @for (number of siteNumbers(); track number.e164) {
+          <mat-option [value]="number.e164" class="app-numeric">{{
+            formatPhoneNumber(number.e164)
+          }}</mat-option>
+        }
+      </mat-select>
+      @if (site()) {
+        <mat-hint class="app-numeric">{{ siteNumbers().length }} free at this site</mat-hint>
+      }
+      <mat-error>{{ error(a.controls.did, 'Number') }}</mat-error>
+    </mat-form-field>
+  } @else {
+    <app-user-picker
+      class="wide"
+      [label]="change() ? 'User to change' : 'User to remove'"
+      [control]="pickerControl()"
+      [users]="users()"
+      [sites]="sites()"
+      [excluded]="excludedUsers()"
+    />
+  }
+
+  @if (deviceLine(); as d) {
+    <div class="toggle">
+      <mat-slide-toggle formControlName="voicemail">Voicemail</mat-slide-toggle>
+    </div>
+    @if (change()) {
+      <span class="gap" aria-hidden="true"></span>
+    }
+
+    <mat-form-field floatLabel="always">
+      <mat-label>Device</mat-label>
+      <mat-select formControlName="deviceModel" placeholder="No device">
+        <mat-option [value]="null">No device</mat-option>
+        @for (device of devices(); track device.id) {
+          <mat-option [value]="device.id">{{ device.name }}</mat-option>
+        }
+      </mat-select>
+      <mat-error>{{ error(d.controls.deviceModel, 'Device') }}</mat-error>
+    </mat-form-field>
+
+    @if (macVisible()) {
+      <mat-form-field>
+        <mat-label>MAC address</mat-label>
+        <input
+          matInput
+          formControlName="macAddress"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="00:1A:2B:3C:4D:5E"
+          class="app-numeric mac"
+          (blur)="tidyMac(d.controls.macAddress)"
+        />
+        <mat-hint>Optional. Without it the phone ships unconfigured.</mat-hint>
+        <mat-error>{{ error(d.controls.macAddress, 'MAC address') }}</mat-error>
+      </mat-form-field>
+    }
+  }
+</div>
+
+@if (userSummary(); as summary) {
+  @if (change()) {
+    <p class="current"><span class="current-label">Now:</span> {{ summary }}</p>
+  } @else {
+    <p class="current">
+      <span class="current-label">Removes:</span> {{ summary }}. Their number goes back to the
+      site’s free numbers.
+    </p>
+  }
+}
+@if (noChanges()) {
+  <p class="line-error" role="alert">
+    <mat-icon svgIcon="error" aria-hidden="true" />
+    Change voicemail or the device, or remove this line.
+  </p>
+}
+
+@if (lineError(); as message) {
+  <p class="line-error" role="alert">
+    <mat-icon svgIcon="error" aria-hidden="true" />
+    {{ message }}
+  </p>
+}
