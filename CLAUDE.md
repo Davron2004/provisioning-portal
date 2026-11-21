@@ -28,6 +28,8 @@ device) through orders, and watch orders move through
 npm ci                              # install every workspace
 docker compose up -d                # DynamoDB Local :8000, OpenSearch :9200
 npm run start:local -w @provisioning/api   # API + WebSocket harness, seeds demo data
+npm run start:local -w @provisioning/api -- --reset   # drop the local table and reseed
+npm run test:integration -w @provisioning/api         # against DynamoDB Local / OpenSearch
 npm start -w @provisioning/web      # Angular dev server
 npm run lint                        # ESLint + Prettier, whole repo
 npm run typecheck                   # every workspace
@@ -106,4 +108,9 @@ Lambda entry points (each exports `handler`), under `services/api/src/handlers/`
 Environment variables read by the handlers: `TABLE_NAME`, `OPENSEARCH_ENDPOINT`,
 `STATE_MACHINE_ARN`, `WS_MANAGEMENT_ENDPOINT`, `AUTH_MODE` (`cognito` | `local`),
 `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `ASSISTANT_PROVIDER`
-(`bedrock` | `anthropic` | `rules`), `ASSISTANT_MODEL`, `ANTHROPIC_API_KEY_PARAM`.
+(`bedrock` | `anthropic` | `rules`), `ASSISTANT_MODEL`, `ANTHROPIC_API_KEY_PARAM`,
+`CORS_ALLOWED_ORIGINS` (comma-separated, default `*`), `LOG_LEVEL`
+(`debug` | `info` | `warn` | `error` | `silent`).
+
+Local-only overrides (set by the harness, never in AWS): `DYNAMODB_ENDPOINT`,
+`LOCAL_JWT_SECRET`. Local demo login: `admin@example.com` / `portal-demo`.
