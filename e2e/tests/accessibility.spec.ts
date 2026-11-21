@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { openAssistantFor } from '../support/assistant-page';
 import { expectNoSeriousA11yViolations } from '../support/axe';
 import { expect, test } from '../support/fixtures';
 import { LoginPage } from '../support/login-page';
@@ -57,9 +58,7 @@ const PAGES: Scan[] = [
   {
     name: 'assistant',
     open: async (page) => {
-      await page.goto('/assistant');
-      await page.getByRole('combobox', { name: 'Account' }).click();
-      await page.getByRole('option', { name: 'Mer Bleue Health Clinics' }).click();
+      await openAssistantFor(page, 'Mer Bleue Health Clinics');
       await page
         .getByRole('textbox', { name: 'What should change?' })
         .fill('Turn off voicemail for everyone at Barrhaven');
@@ -85,7 +84,10 @@ const LAYOUTS = [
 for (const colorScheme of ['light', 'dark'] as const) {
   for (const { layout, tag } of LAYOUTS) {
     test.describe(`accessibility, ${colorScheme} theme, ${layout}`, { tag }, () => {
-      test.use({ colorScheme, reducedMotion: 'reduce' });
+      // Default motion settings on purpose: under reduced motion the app's global 0.01ms
+      // transition rule turns every style change into a transition, and axe can catch the
+      // side navigation's inherited `visibility` mid-way on a busy machine.
+      test.use({ colorScheme });
 
       for (const { name, open } of PAGES) {
         test(`${name} has no serious or critical axe violations`, async ({ page }, testInfo) => {

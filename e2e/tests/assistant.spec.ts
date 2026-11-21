@@ -1,19 +1,15 @@
-import type { Page } from '@playwright/test';
+import { openAssistantFor } from '../support/assistant-page';
 import { expect, test } from '../support/fixtures';
 import { bodyRows } from '../support/tables';
 
-/** Opens the assistant with Lumen Ridge Robotics (the account with the Kanata site) chosen. */
-async function openAssistant(page: Page) {
-  await page.goto('/assistant');
-  await page.getByRole('combobox', { name: 'Account' }).click();
-  await page.getByRole('option', { name: 'Lumen Ridge Robotics' }).click();
-}
+// Lumen Ridge Robotics is the account with the Kanata site.
+const ACCOUNT = 'Lumen Ridge Robotics';
 
 test('a plain-English request becomes a reviewed order that provisions live', async ({
   page,
   orderPushes,
 }) => {
-  await openAssistant(page);
+  await openAssistantFor(page, ACCOUNT);
   const request = 'Add 3 users at the Kanata site with voicemail';
   await page.getByRole('textbox', { name: 'What should change?' }).fill(request);
   await page.getByRole('button', { name: 'Interpret' }).click();
@@ -58,7 +54,7 @@ test('a plain-English request becomes a reviewed order that provisions live', as
 });
 
 test('a request it cannot understand says so and orders nothing', async ({ page }) => {
-  await openAssistant(page);
+  await openAssistantFor(page, ACCOUNT);
   await page.getByRole('textbox', { name: 'What should change?' }).fill('order pizza for the team');
   await page.getByRole('button', { name: 'Interpret' }).click();
 
