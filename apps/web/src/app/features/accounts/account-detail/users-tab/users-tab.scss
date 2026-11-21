@@ -13,6 +13,17 @@
   max-width: 0;
 }
 
+// Without the voicemail column, the site and device take its space.
+.narrow {
+  .mat-column-site {
+    width: 18%;
+  }
+
+  .mat-column-device {
+    width: 20%;
+  }
+}
+
 .mat-column-extension {
   width: 72px;
 }

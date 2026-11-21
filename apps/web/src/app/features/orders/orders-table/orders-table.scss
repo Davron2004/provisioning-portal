@@ -25,6 +25,23 @@
   }
 }
 
+// Without the source and submitter columns, the order and account take their space.
+.narrow {
+  .mat-column-title {
+    width: 50%;
+  }
+
+  &.with-account {
+    .mat-column-title {
+      width: 38%;
+    }
+
+    .mat-column-account {
+      width: 26%;
+    }
+  }
+}
+
 .mat-column-source,
 .mat-column-updated {
   white-space: nowrap;

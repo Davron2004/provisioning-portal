@@ -3,7 +3,11 @@ import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { OrderSummary } from '@provisioning/contracts';
 import { orderSourceLabel } from '../../../shared/format/labels';
-import { HANDSET_LAYOUT, injectMediaQuery } from '../../../shared/layout/media-query';
+import {
+  HANDSET_LAYOUT,
+  MEDIUM_LAYOUT,
+  injectMediaQuery,
+} from '../../../shared/layout/media-query';
 import { RelativeTime } from '../../../shared/ui/relative-time/relative-time';
 import { StatusChip } from '../../../shared/ui/status-chip/status-chip';
 import { Truncate } from '../../../shared/ui/truncate/truncate';
@@ -40,13 +44,14 @@ export class OrdersTable {
   readonly showAccount = input(false);
 
   protected readonly handset = injectMediaQuery(HANDSET_LAYOUT);
+  /** Narrower tables leave out the source and submitter (both are on the order page). */
+  protected readonly medium = injectMediaQuery(MEDIUM_LAYOUT);
   protected readonly columns = computed(() => [
     'title',
     ...(this.showAccount() ? ['account'] : []),
     'status',
     'progress',
-    'source',
-    'submittedBy',
+    ...(this.medium() ? [] : ['source', 'submittedBy']),
     'updated',
   ]);
   protected readonly progress = orderProgress;

@@ -90,6 +90,7 @@
         mat-table
         class="app-table"
         aria-label="Users"
+        [class.narrow]="medium()"
         [dataSource]="rows()"
         [trackBy]="trackById"
       >
