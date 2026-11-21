@@ -19,7 +19,6 @@ import { LoadMore } from '../../../../shared/ui/load-more/load-more';
 import { StatusChip } from '../../../../shared/ui/status-chip/status-chip';
 import { TableSkeleton } from '../../../../shared/ui/table-skeleton/table-skeleton';
 import { AccountStore } from '../account-store';
-import { filterUsers } from './user-filter';
 
 @Component({
   selector: 'app-users-tab',
@@ -56,7 +55,11 @@ export class UsersTab {
   protected readonly users = pagedList(
     () => {
       const accountId = this.store.accountId();
-      return accountId ? { accountId, siteId: this.siteId() } : undefined;
+      // The URL's `q` follows the box once typing pauses (SEARCH_DEBOUNCE_MS), so the
+      // API is asked once per pause, not per keystroke.
+      return accountId
+        ? { accountId, siteId: this.siteId(), q: this.q()?.trim() || null }
+        : undefined;
     },
     (request) => this.usersApi.list(request),
   );
@@ -68,8 +71,10 @@ export class UsersTab {
     return (user: VoiceUser) => deviceName(devices, user.device?.model);
   });
 
-  protected readonly rows = computed(() => filterUsers(this.users.items(), this.search.text()));
+  protected readonly rows = this.users.items;
   protected readonly filtered = computed(() => !!this.siteId() || !!this.search.text().trim());
+  /** The text filter the loaded rows were fetched with (follows the URL, not the box). */
+  protected readonly searching = computed(() => !!this.q()?.trim());
   protected readonly columns = computed(() =>
     [
       'name',
@@ -88,15 +93,15 @@ export class UsersTab {
       ? this.store.sites()?.find((site) => site.id === siteId)?.userCount
       : this.store.account()?.userCount;
   });
-  protected readonly resultCount = computed(() =>
-    resultCountLabel(
-      this.rows().length,
-      this.users.items().length,
-      this.users.hasMore(),
-      'user',
-      this.total(),
-    ),
-  );
+  protected readonly resultCount = computed(() => {
+    const loaded = this.users.items().length;
+    if (this.searching()) {
+      const n = loaded.toLocaleString('en');
+      const noun = loaded === 1 ? 'match' : 'matches';
+      return this.users.hasMore() ? `First ${n} ${noun}` : `${n} ${noun}`;
+    }
+    return resultCountLabel(loaded, loaded, this.users.hasMore(), 'user', this.total());
+  });
 
   protected readonly fullName = fullName;
   protected readonly trackById = (_: number, user: VoiceUser) => user.id;
@@ -106,7 +111,7 @@ export class UsersTab {
   }
 
   protected clearFilters(): void {
-    this.search.set('');
-    void this.updateQuery({ site: null });
+    this.search.reset();
+    void this.updateQuery({ site: null, q: null });
   }
 }

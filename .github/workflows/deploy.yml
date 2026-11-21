@@ -1,0 +1,80 @@
+name: Deploy
+
+# Deploys main to AWS after CI passed on it, or on demand. Authenticates with
+# GitHub OIDC (no AWS keys stored anywhere). Until the AWS_DEPLOY_ROLE_ARN
+# repository variable is set, the job is skipped, not failed.
+# First-time setup: docs/deployment.md.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-aws-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to AWS (dev)
+    if: >-
+      vars.AWS_DEPLOY_ROLE_ARN != '' &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment:
+      name: aws-dev
+      url: ${{ steps.outputs.outputs.web_url }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'ca-central-1' }}
+      STAGE: dev
+      STACK: ProvisioningPortal-dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Deploy exactly the commit CI tested.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @provisioning/web
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: provisioning-portal-deploy-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: cdk deploy
+        working-directory: infra
+        env:
+          BUDGET_EMAIL: ${{ secrets.BUDGET_EMAIL }}
+          ASSISTANT_PROVIDER: ${{ vars.ASSISTANT_PROVIDER || 'bedrock' }}
+          BEDROCK_REGION: ${{ vars.BEDROCK_REGION }}
+        run: >-
+          npx cdk deploy "$STACK"
+          --require-approval never
+          --outputs-file cdk-outputs.json
+          -c stage="$STAGE"
+          -c region="$AWS_REGION"
+          -c assistantProvider="$ASSISTANT_PROVIDER"
+          -c bedrockRegion="$BEDROCK_REGION"
+
+      - name: Read outputs
+        id: outputs
+        run: echo "web_url=$(jq -r --arg s "$STACK" '.[$s].WebUrl' infra/cdk-outputs.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test
+        run: infra/scripts/smoke-test.sh infra/cdk-outputs.json "$STACK"

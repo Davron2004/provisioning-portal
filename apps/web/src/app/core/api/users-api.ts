@@ -6,6 +6,8 @@ import { ApiClient } from './api-client';
 export interface UserListQuery {
   readonly accountId: string;
   readonly siteId?: string | null;
+  /** Text filter, matched by the API. */
+  readonly q?: string | null;
   readonly cursor?: string | null;
 }
 
@@ -17,7 +19,10 @@ export class UsersApi {
     return this.api.resource(VoiceUserPage, () => {
       const q = query();
       return (
-        q && { path: ApiPaths.users(q.accountId), params: { siteId: q.siteId, cursor: q.cursor } }
+        q && {
+          path: ApiPaths.users(q.accountId),
+          params: { siteId: q.siteId, q: q.q, cursor: q.cursor },
+        }
       );
     });
   }

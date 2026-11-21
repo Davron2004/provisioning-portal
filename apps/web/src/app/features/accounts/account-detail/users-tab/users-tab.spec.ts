@@ -55,24 +55,71 @@ describe('UsersTab', () => {
     expect(page.host().querySelector('mat-select')?.textContent).toContain('Ottawa HQ');
   });
 
-  it('filters loaded users by text, and says how many match', async () => {
-    const api = anAccountApi().on('/accounts/acc_northwind/users', aPage([ADA, GRACE]));
-    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users?q=hopper');
-
-    expect(rows(page.host()).map((row) => cell(row, 'extension'))).toEqual(['2001']);
-    expect(page.host().querySelector('.app-result-count')?.textContent?.trim()).toBe(
-      '1 of 2 users',
-    );
-
+  const typeInBox = (page: Awaited<ReturnType<typeof setUpAccountPage>>, text: string) => {
     const input = page.host().querySelector<HTMLInputElement>('input[type="search"]')!;
-    input.value = '555-0142';
+    input.value = text;
     input.dispatchEvent(new Event('input'));
     page.harness.fixture.detectChanges();
-    expect(rows(page.host()).map((row) => cell(row, 'extension'))).toEqual(['2101']);
+  };
+
+  it('sends the text filter to the API, debounced and mirrored in the URL', async () => {
+    const api = anAccountApi().onUsers('/accounts/acc_northwind/users', [ADA, GRACE]);
+    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users');
+    expect(rows(page.host())).toHaveLength(2);
+    const before = api.requestsTo('/accounts/acc_northwind/users').length;
+
+    typeInBox(page, 'h');
+    typeInBox(page, 'hopper');
+    // Nothing is sent while typing.
+    expect(api.requestsTo('/accounts/acc_northwind/users')).toHaveLength(before);
 
     await new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 20));
     await page.settle();
-    expect(page.url()).toBe('/accounts/acc_northwind/users?q=555-0142');
+
+    const sent = api.requestsTo('/accounts/acc_northwind/users');
+    expect(sent).toHaveLength(before + 1);
+    expect(sent.at(-1)?.params.get('q')).toBe('hopper');
+    expect(page.url()).toBe('/accounts/acc_northwind/users?q=hopper');
+    expect(rows(page.host()).map((row) => cell(row, 'extension'))).toEqual(['2001']);
+    expect(page.host().querySelector('.app-result-count')?.textContent?.trim()).toBe('1 match');
+  });
+
+  it('starts from the q in the URL and finds users by phone number', async () => {
+    const api = anAccountApi().onUsers('/accounts/acc_northwind/users', [ADA, GRACE]);
+    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users?q=555-0142');
+    expect(api.requestsTo('/accounts/acc_northwind/users').at(-1)?.params.get('q')).toBe(
+      '555-0142',
+    );
+    expect(rows(page.host()).map((row) => cell(row, 'extension'))).toEqual(['2101']);
+  });
+
+  it('shows "No users match" when the server finds nothing, and clears the filter', async () => {
+    const api = anAccountApi().onUsers('/accounts/acc_northwind/users', [ADA, GRACE]);
+    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users?q=zzz');
+    expect(page.host().querySelector('app-empty-state h2')?.textContent).toBe('No users match');
+
+    page.host().querySelector<HTMLButtonElement>('app-empty-state button')!.click();
+    await page.settle();
+    expect(page.url()).toBe('/accounts/acc_northwind/users');
+    expect(rows(page.host())).toHaveLength(2);
+  });
+
+  it('loads more pages of a filtered list with the same q', async () => {
+    const api = anAccountApi().onUsers('/accounts/acc_northwind/users', [ADA, GRACE], 1);
+    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users?q=example.com');
+    expect(rows(page.host())).toHaveLength(1);
+    expect(page.host().querySelector('.app-result-count')?.textContent?.trim()).toBe(
+      'First 1 match',
+    );
+
+    page.host().querySelector<HTMLButtonElement>('app-load-more button')!.click();
+    await page.settle();
+
+    const last = api.requestsTo('/accounts/acc_northwind/users').at(-1)!;
+    expect(last.params.get('q')).toBe('example.com');
+    expect(last.params.get('cursor')).toBe('1');
+    expect(rows(page.host())).toHaveLength(2);
+    expect(page.host().querySelector('.app-result-count')?.textContent?.trim()).toBe('2 matches');
   });
 
   it('pages through users with the cursor, counting against the account total', async () => {

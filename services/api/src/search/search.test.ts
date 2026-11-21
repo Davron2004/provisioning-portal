@@ -176,7 +176,7 @@ describe('SearchIndexer', () => {
   });
 
   function indexer(items: { index?: { status: number }; delete?: { status: number } }[] = []) {
-    const bulk = vi.fn(async (_req: { body: object[] }) => ({ body: { items } }));
+    const bulk = vi.fn(async (_req: { index?: string; body: object[] }) => ({ body: { items } }));
     const exists = vi.fn(async () => ({ body: true }));
     const client = { bulk, indices: { exists, create: vi.fn() } } as unknown as Client;
     return { bulk, exists, indexer: new SearchIndexer(client, 'idx', () => lookups) };
@@ -204,6 +204,7 @@ describe('SearchIndexer', () => {
       record({ PK: 'MAC#x', SK: 'MAC', entity: 'Guard' }),
     ]);
     expect(result).toEqual({ indexed: 3, deleted: 1 });
+    expect(bulk.mock.calls[0]![0].index).toBe('idx');
     const body = bulk.mock.calls[0]![0].body;
     expect(body).toContainEqual({ index: { _index: 'idx', _id: 'user:u1' } });
     expect(body).toContainEqual({ delete: { _index: 'idx', _id: 'user:u9' } });

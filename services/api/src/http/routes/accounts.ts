@@ -18,7 +18,10 @@ export const PageQuery = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).optional(),
 });
 
-const UsersQuery = PageQuery.extend({ siteId: z.string().optional() });
+const UsersQuery = PageQuery.extend({
+  siteId: z.string().optional(),
+  q: z.string().trim().max(100).optional(),
+});
 const NumbersQuery = PageQuery.extend({
   siteId: z.string().optional(),
   status: NumberStatus.optional(),

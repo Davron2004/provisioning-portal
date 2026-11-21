@@ -85,7 +85,8 @@ export class SearchIndexer {
         ? [{ index: { _index: this.index, _id: id } }, op.doc]
         : [{ delete: { _index: this.index, _id: id } }],
     );
-    const response = await this.client.bulk({ body: body as never });
+    // Index-scoped endpoint (/<index>/_bulk): the Lambda's IAM policy only covers this index.
+    const response = await this.client.bulk({ index: this.index, body: body as never });
     const failed = (response.body.items ?? []).filter((entry) => {
       const result = Object.values(entry)[0] as { status?: number } | undefined;
       // Deleting a document that was never indexed is fine.

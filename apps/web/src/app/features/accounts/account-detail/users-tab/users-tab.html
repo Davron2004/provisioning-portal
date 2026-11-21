@@ -37,7 +37,7 @@
     label="Loading users"
     [columns]="[3, 1.4, 0.8, 1.4, 0.8, 1.4, 1.2]"
   />
-} @else if (users.items().length === 0) {
+} @else if (users.items().length === 0 && !searching()) {
   <app-empty-state
     icon="group"
     [heading]="siteId() ? 'No users at this site' : 'No users yet'"
