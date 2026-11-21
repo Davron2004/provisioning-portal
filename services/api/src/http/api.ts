@@ -2,6 +2,7 @@ import { createHttpApp, type HttpApp } from './app';
 import type { ApiDeps } from './deps';
 import { Router } from './router';
 import { registerAccountRoutes } from './routes/accounts';
+import { registerAssistantRoutes } from './routes/assistant';
 import { registerOrderReadRoutes, registerOrderWriteRoutes } from './routes/orders';
 import { registerOverviewRoutes } from './routes/overview';
 import { registerSearchRoutes } from './routes/search';
@@ -14,6 +15,7 @@ export function buildRouter(deps: ApiDeps): Router {
   registerOrderReadRoutes(router, deps);
   registerOrderWriteRoutes(router, deps);
   registerSearchRoutes(router, deps);
+  registerAssistantRoutes(router, deps);
   return router;
 }
 
