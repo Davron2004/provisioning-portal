@@ -1,0 +1,249 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-6);
+}
+
+app-page-header {
+  margin-bottom: 0;
+}
+
+h2 {
+  font: var(--mat-sys-title-medium);
+  font-weight: 600;
+}
+
+.request {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-3);
+  padding: var(--app-space-5) var(--app-space-6);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-lg);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.account {
+  width: min(360px, 100%);
+}
+
+.prompt {
+  width: 100%;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--app-space-2) var(--app-space-3);
+}
+
+.examples-label {
+  font: var(--mat-sys-label-large);
+  line-height: 32px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.example-list {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.example {
+  --mat-button-outlined-container-shape: var(--app-radius-full);
+  --mat-button-outlined-container-height: 32px;
+  --mat-button-outlined-horizontal-padding: 14px;
+
+  height: auto;
+  min-height: 32px;
+  padding-block: 6px;
+  font: var(--mat-sys-label-large);
+  text-align: left;
+  white-space: normal;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-space-3);
+  margin-top: var(--app-space-2);
+
+  mat-spinner {
+    display: inline-block;
+    margin-inline-end: var(--app-space-2);
+  }
+}
+
+.hint {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.result,
+.understood,
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-4);
+}
+
+.result {
+  gap: var(--app-space-6);
+
+  &:empty {
+    display: none;
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-3);
+}
+
+.understood-head,
+.review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-2) var(--app-space-4);
+}
+
+.provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 8px;
+  border-radius: var(--app-radius-full);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-medium);
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.asked {
+  margin: 0;
+  padding-left: var(--app-space-3);
+  border-left: 3px solid var(--mat-sys-outline-variant);
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+  quotes: '“' '”';
+
+  &::before {
+    content: open-quote;
+  }
+
+  &::after {
+    content: close-quote;
+  }
+}
+
+.operations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-2);
+  margin: 0;
+  padding-left: var(--app-space-6);
+  font: var(--mat-sys-body-large);
+
+  li::marker {
+    color: var(--mat-sys-primary);
+    font-weight: 600;
+  }
+}
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+
+  li {
+    display: flex;
+    gap: var(--app-space-2);
+  }
+}
+
+.notes mat-icon,
+.stale mat-icon,
+.not-yet mat-icon,
+.nothing mat-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.unresolved {
+  display: flex;
+  gap: var(--app-space-3);
+  padding: var(--app-space-3) var(--app-space-4);
+  border-radius: var(--app-radius-md);
+  background: var(--app-status-warning-bg);
+  color: var(--app-status-warning-fg);
+
+  ul {
+    margin: var(--app-space-1) 0 0;
+    padding-left: var(--app-space-5);
+  }
+}
+
+.unresolved-title {
+  font-weight: 600;
+}
+
+.stale,
+.not-yet,
+.nothing {
+  display: flex;
+  gap: var(--app-space-2);
+  font: var(--mat-sys-body-medium);
+}
+
+.stale {
+  color: var(--app-status-info-fg);
+}
+
+.not-yet {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
+}
+
+.nothing {
+  padding: var(--app-space-4);
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-lg);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fallback {
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 599.98px) {
+  .request {
+    padding: var(--app-space-4);
+  }
+
+  .examples-label,
+  .example-list {
+    flex-basis: 100%;
+  }
+}

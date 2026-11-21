@@ -1,0 +1,196 @@
+<app-page-header
+  title="Assistant"
+  subtitle="Describe a change in plain English. You review the exact order before anything is provisioned."
+/>
+
+<section class="request" aria-label="Your request">
+  <div class="row">
+    <mat-form-field class="account">
+      <mat-label>Account</mat-label>
+      <mat-select
+        [value]="selectedAccountId()"
+        (selectionChange)="selectAccount($event.value)"
+        placeholder="Choose an account"
+      >
+        @for (account of accountOptions(); track account.id) {
+          <mat-option [value]="account.id">{{ account.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field class="prompt">
+    <mat-label>What should change?</mat-label>
+    <textarea
+      #prompt
+      matInput
+      rows="3"
+      [attr.maxlength]="maxRequest"
+      [value]="text()"
+      (input)="text.set(prompt.value)"
+      (keydown.control.enter)="onShortcut($event)"
+      (keydown.meta.enter)="onShortcut($event)"
+      placeholder="Add 3 users at the Kanata site with voicemail and desk phones"
+    ></textarea>
+    <mat-hint align="end" class="app-numeric">{{ text().length }} / {{ maxRequest }}</mat-hint>
+  </mat-form-field>
+
+  @if (examples().length > 0) {
+    <div class="examples">
+      <span id="assistant-examples-label" class="examples-label">Try</span>
+      <ul class="example-list" aria-labelledby="assistant-examples-label">
+        @for (example of examples(); track example.text) {
+          <li>
+            <button
+              matButton="outlined"
+              type="button"
+              class="example"
+              [disabled]="!selectedAccountId() || result()?.state === 'loading'"
+              (click)="useExample(example.text)"
+            >
+              {{ example.text }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="actions">
+    <button
+      matButton="filled"
+      type="button"
+      [disabled]="!canInterpret()"
+      [attr.aria-busy]="result()?.state === 'loading' || null"
+      (click)="interpret()"
+    >
+      @if (result()?.state === 'loading') {
+        <mat-spinner diameter="18" aria-hidden="true" />
+      } @else {
+        <mat-icon svgIcon="wand_stars" />
+      }
+      {{ result()?.state === 'loading' ? 'Interpreting' : 'Interpret' }}
+    </button>
+    @if (!selectedAccountId()) {
+      <span class="hint">Choose an account first.</span>
+    } @else {
+      <span class="hint">Nothing is provisioned until you approve the order.</span>
+    }
+  </div>
+</section>
+
+<div class="result" aria-live="polite" [attr.aria-busy]="result()?.state === 'loading' || null">
+  @switch (result()?.state) {
+    @case ('loading') {
+      <div class="loading" role="status" aria-label="Interpreting your request">
+        <app-skeleton width="40%" />
+        <app-skeleton [lines]="2" />
+        <app-skeleton height="160px" />
+      </div>
+    }
+    @case ('error') {
+      @if (result()!.problem?.code === 'assistant_unavailable') {
+        <app-error-state
+          heading="The assistant is not available right now"
+          [error]="result()!.error"
+          (retry)="interpret()"
+        />
+        <p class="fallback">
+          You can still
+          <a [routerLink]="['/accounts', result()!.accountId, 'orders', 'new']"
+            >build the order by hand</a
+          >.
+        </p>
+      } @else {
+        <app-error-state
+          heading="Could not interpret the request"
+          [error]="result()!.error"
+          (retry)="interpret()"
+        />
+      }
+    }
+    @case ('done') {
+      @let r = response()!;
+      <section class="understood" aria-labelledby="understood-heading">
+        <div class="understood-head">
+          <h2 id="understood-heading">How the request was understood</h2>
+          <span class="provider" [attr.data-provider]="r.provider">
+            <mat-icon
+              [svgIcon]="r.provider === 'rules' ? 'dialpad' : 'wand_stars'"
+              aria-hidden="true"
+            />
+            Interpreted by: {{ provider() }}
+          </span>
+        </div>
+        @if (stale()) {
+          <p class="stale">
+            <mat-icon svgIcon="info" aria-hidden="true" />
+            You changed the request after this. Interpret it again to update the order.
+          </p>
+        }
+        <blockquote class="asked">{{ result()!.text }}</blockquote>
+
+        @if (operations().length > 0) {
+          <ol class="operations">
+            @for (operation of operations(); track $index) {
+              <li>{{ operation }}</li>
+            }
+          </ol>
+        }
+        @if (r.notes.length > 0) {
+          <ul class="notes" aria-label="How names were matched">
+            @for (note of r.notes; track $index) {
+              <li><mat-icon svgIcon="info" aria-hidden="true" />{{ note }}</li>
+            }
+          </ul>
+        }
+        @if (r.intent.unresolved.length > 0) {
+          <div class="unresolved" role="note">
+            <mat-icon svgIcon="warning" aria-hidden="true" />
+            <div>
+              <p class="unresolved-title">Not understood, so left out:</p>
+              <ul>
+                @for (part of r.intent.unresolved; track $index) {
+                  <li>“{{ part }}”</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+      </section>
+
+      @if (r.preview; as preview) {
+        <section class="review" aria-labelledby="review-heading">
+          <div class="review-head">
+            <h2 id="review-heading">Order to approve</h2>
+            <p class="not-yet">
+              <mat-icon svgIcon="lock" aria-hidden="true" />
+              Nothing has been provisioned. This runs only when you approve it.
+            </p>
+          </div>
+          <app-order-review
+            [preview]="preview"
+            [draft]="r.draft"
+            [sites]="directory.sites()"
+            [devices]="directory.devices()"
+            [submitting]="submission.submitting()"
+            [submitError]="submission.error()"
+            submitLabel="Approve and submit"
+            backLabel="Edit in order builder"
+            backIcon="edit"
+            (back)="editInBuilder()"
+            (submitOrder)="approve()"
+          />
+        </section>
+      } @else {
+        <div class="nothing">
+          <mat-icon svgIcon="info" aria-hidden="true" />
+          <p>
+            Nothing to order from this request. Try naming a site, people or extensions, like the
+            examples above.
+          </p>
+        </div>
+      }
+    }
+  }
+</div>
