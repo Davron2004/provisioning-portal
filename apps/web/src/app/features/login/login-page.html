@@ -74,17 +74,12 @@
     @if (isLocal) {
       <aside class="demo" aria-label="Demo account">
         <mat-icon svgIcon="info" aria-hidden="true" />
-        <p>
-          <span class="demo-title">Local demo account</span>
-          <button
-            type="button"
-            class="demo-email"
-            [attr.aria-label]="'Fill in ' + demoEmail"
-            (click)="useDemoAccount()"
-          >
-            {{ demoEmail }}
-          </button>
-        </p>
+        <dl class="demo-text">
+          <dt class="demo-title">Local demo account</dt>
+          <dd>{{ demo.email }}</dd>
+          <dd>Password: {{ demo.password }}</dd>
+        </dl>
+        <button matButton type="button" class="demo-use" (click)="useDemoAccount()">Fill in</button>
       </aside>
     }
   </section>

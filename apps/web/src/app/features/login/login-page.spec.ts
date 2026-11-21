@@ -111,11 +111,14 @@ describe('LoginPage', () => {
 
   it('offers the demo account only in local mode', async () => {
     await setup();
-    expect(host.textContent).toContain('admin@example.com');
-    host.querySelector<HTMLButtonElement>('.demo-email')!.click();
+    expect(host.querySelector('.demo')?.textContent).toContain('admin@example.com');
+    host.querySelector<HTMLButtonElement>('.demo-use')!.click();
     await fixture.whenStable();
     expect(host.querySelector<HTMLInputElement>('input[name="email"]')!.value).toBe(
       'admin@example.com',
+    );
+    expect(host.querySelector<HTMLInputElement>('input[name="password"]')!.value).toBe(
+      'portal-demo',
     );
 
     TestBed.resetTestingModule();

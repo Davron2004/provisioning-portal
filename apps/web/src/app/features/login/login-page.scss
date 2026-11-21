@@ -98,10 +98,10 @@
 
 .demo {
   display: flex;
-  align-items: flex-start;
-  gap: var(--app-space-2);
+  align-items: center;
+  gap: var(--app-space-3);
   margin-top: var(--app-space-5);
-  padding: var(--app-space-3) var(--app-space-4);
+  padding: var(--app-space-3) var(--app-space-2) var(--app-space-3) var(--app-space-4);
   border-radius: var(--app-radius-md);
   background: var(--mat-sys-surface-container);
   color: var(--mat-sys-on-surface-variant);
@@ -112,15 +112,20 @@
     flex: none;
     width: 18px;
     height: 18px;
-    margin-top: 1px;
   }
 }
 
-.demo p {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+.demo-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+
+  dd {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .demo-title {
@@ -128,16 +133,8 @@
   font-weight: 600;
 }
 
-.demo-email {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--mat-sys-primary);
-  font: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
+.demo-use {
+  flex: none;
 }
 
 @media (max-width: 480px) {

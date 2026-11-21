@@ -26,8 +26,11 @@ import { AppConfig } from '../../core/config/app-config';
 import { ThemeToggle } from '../../layout/theme-toggle/theme-toggle';
 import { BrandMark } from '../../shared/ui/brand-mark/brand-mark';
 
-/** Demo account seeded by the local harness. */
-export const DEMO_EMAIL = 'admin@example.com';
+/**
+ * Demo operator of the local harness (services/api/src/local/demo-users.ts).
+ * Shown only when auth mode is `local`; it protects nothing.
+ */
+export const DEMO_ACCOUNT = { email: 'admin@example.com', password: 'portal-demo' } as const;
 
 @Component({
   selector: 'app-login-page',
@@ -57,7 +60,7 @@ export class LoginPage {
   readonly returnUrl = input<string>();
 
   protected readonly isLocal = inject(AppConfig).value.auth.mode === 'local';
-  protected readonly demoEmail = DEMO_EMAIL;
+  protected readonly demo = DEMO_ACCOUNT;
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly passwordVisible = signal(false);
@@ -103,7 +106,7 @@ export class LoginPage {
   }
 
   protected useDemoAccount(): void {
-    this.form.controls.email.setValue(this.demoEmail);
-    this.host.nativeElement.querySelector<HTMLInputElement>('input[name="password"]')?.focus();
+    this.form.setValue({ email: this.demo.email, password: this.demo.password });
+    this.host.nativeElement.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus();
   }
 }
