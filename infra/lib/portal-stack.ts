@@ -5,6 +5,7 @@ import { grantDeclaredAccess } from './access';
 import { PROJECT, type PortalConfig } from './config';
 import { Auth } from './constructs/auth';
 import { Data } from './constructs/data';
+import { DemoData } from './constructs/demo-data';
 import { Observability } from './constructs/observability';
 import type { HandlerName, PortalFunction } from './constructs/portal-function';
 import { Realtime } from './constructs/realtime';
@@ -86,7 +87,14 @@ export class PortalStack extends Stack {
       SearchIndexer: streams.searchIndexer,
       OrderNotifier: streams.orderNotifier,
     };
-    for (const fn of Object.values(functions)) {
+    // Seeding runs once at stack creation; a failure fails the deploy, so it needs no alarm.
+    const demoData = config.seedDemoData
+      ? new DemoData(this, 'DemoData', { ...common, table })
+      : undefined;
+    // Not required (the mappings start at TRIM_HORIZON), but the seed is then indexed right away.
+    demoData?.node.addDependency(streams);
+
+    for (const fn of [...Object.values(functions), ...(demoData ? [demoData.handler] : [])]) {
       grantDeclaredAccess(fn, {
         table,
         stateMachine: workflow.stateMachine,

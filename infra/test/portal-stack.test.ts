@@ -28,6 +28,7 @@ const FUNCTIONS = {
   finalizeOrder: 'Workflow/FinalizeOrder',
   searchIndexer: 'Streams/SearchIndexer',
   orderNotifier: 'Streams/OrderNotifier',
+  seedDemoData: 'DemoData/Handler',
 } as const satisfies Record<keyof typeof HANDLERS, string>;
 
 /** Declared variables the stack leaves unset on purpose: the code's defaults apply. */
@@ -560,6 +561,12 @@ describe('PortalStack (dev, defaults)', () => {
     });
   });
 
+  it('seeds demo data once, through a custom resource with table access only', () => {
+    template().resourceCountIs('Custom::DemoData', 1);
+    const actions = actionsOf(statementsOf(template(), roleOf('seedDemoData')));
+    expect(actions.filter((a) => !a.startsWith('xray:') && !a.startsWith('dynamodb:'))).toEqual([]);
+  });
+
   describe('cost guardrails and alarms', () => {
     it('skips the budget with a warning when no email is given', () => {
       template().resourceCountIs('AWS::Budgets::Budget', 0);
@@ -575,7 +582,8 @@ describe('PortalStack (dev, defaults)', () => {
         (a) => a.Properties as { MetricName: string; Namespace: string },
       );
       const count = (metric: string) => alarms.filter((a) => a.MetricName === metric).length;
-      expect(count('Errors')).toBe(Object.keys(FUNCTIONS).length);
+      // Every runtime Lambda; the one-off seeding function fails the deploy instead.
+      expect(count('Errors')).toBe(Object.keys(FUNCTIONS).length - 1);
       expect(count('ExecutionsFailed')).toBe(1);
       expect(count('ApproximateNumberOfMessagesVisible')).toBe(2);
       expect(count('5XXError')).toBe(1);
@@ -636,6 +644,10 @@ describe('PortalStack (prod, budget email, Claude API provider)', () => {
       Replicas: [Match.objectLike({ DeletionProtectionEnabled: true })],
     });
     template().resourceCountIs('Custom::S3AutoDeleteObjects', 0);
+  });
+
+  it('does not seed demo data', () => {
+    template().resourceCountIs('Custom::DemoData', 0);
   });
 
   it('creates a $50 monthly budget alerting at 80% actual and 100% forecast', () => {

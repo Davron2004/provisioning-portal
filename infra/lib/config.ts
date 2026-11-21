@@ -26,6 +26,8 @@ export interface PortalConfig {
     /** SSM SecureString holding the Claude API key, used when provider is `anthropic`. */
     anthropicApiKeyParam: string;
   };
+  /** Seed the demo dataset into the empty table on first deploy (default: every stage but prod). */
+  seedDemoData: boolean;
   /** Stage-level REST API throttling (requests per second, burst). Protects Lambda and Bedrock spend. */
   apiThrottle: { rateLimit: number; burstLimit: number };
 }
@@ -85,6 +87,7 @@ export function loadConfig(
       anthropicApiKeyParam:
         read('anthropicApiKeyParam') ?? `/${PROJECT}/${stage}/anthropic-api-key`,
     },
+    seedDemoData: (read('seedDemoData') ?? String(!isProduction)) === 'true',
     apiThrottle: {
       rateLimit: positiveNumber(read('apiRateLimit') ?? '10', 'apiRateLimit'),
       burstLimit: positiveNumber(read('apiBurstLimit') ?? '20', 'apiBurstLimit'),
