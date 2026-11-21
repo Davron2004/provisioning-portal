@@ -929,8 +929,10 @@ sites and users, so each one resolves.
 (`SEARCH_DEBOUNCE_MS`), a filter or a link applies at once, and `switchMap`
 cancels the request in flight when a newer query starts. Results are grouped by
 entity in the order of each group's best hit, since the API ranks across
-entities. The filter chips count every entity from one unfiltered search (up to
-50 hits); with a filter on, a second request fetches up to 50 of that entity.
+entities. The filter chips show `SearchResponse.totals`: exact per-entity counts
+from an OpenSearch `terms` aggregation on `entity`, which respects the query and
+the account filter but not the entity filter (that one is a `post_filter`, so it
+narrows the hits only). One request per query, filtered or not, up to 50 hits.
 Highlights arrive HTML-escaped with `<mark>` tags; the page does not bind them
 with `[innerHTML]` but splits them into text and `<mark>` parts and decodes the
 text (`highlight.ts`), so names can never become markup. Users link to their

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth-guards';
+import { unsavedChangesGuard } from './core/navigation/unsaved-changes';
 
 /**
  * Every page is a lazily loaded standalone component. Route parameters and query
@@ -36,6 +37,7 @@ export const routes: Routes = [
       {
         path: 'accounts/:accountId/orders/new',
         title: 'New order',
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import('./features/orders/new-order/new-order-page').then((m) => m.NewOrderPage),
       },
@@ -66,6 +68,7 @@ export const routes: Routes = [
       {
         path: 'assistant',
         title: 'Assistant',
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import('./features/assistant/assistant-page').then((m) => m.AssistantPage),
       },

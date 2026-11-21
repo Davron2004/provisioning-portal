@@ -1,16 +1,3 @@
-@use '@angular/material' as mat;
-
-.status-toggle {
-  @include mat.button-toggle-overrides(
-    (
-      height: 44px,
-      shape: var(--app-radius-md),
-      selected-state-background-color: var(--mat-sys-secondary-container),
-      selected-state-text-color: var(--mat-sys-on-secondary-container),
-    )
-  );
-}
-
 .number {
   font-weight: 500;
   white-space: nowrap;
@@ -19,14 +6,4 @@
 .order-link {
   align-self: flex-start;
   font: var(--mat-sys-label-large);
-}
-
-@media (max-width: 599.98px) {
-  .status-toggle {
-    flex: 1 1 100%;
-
-    mat-button-toggle {
-      flex: 1;
-    }
-  }
 }

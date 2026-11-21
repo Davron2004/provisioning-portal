@@ -8,18 +8,12 @@
       }
     </mat-select>
   </mat-form-field>
-  <mat-button-toggle-group
-    class="status-toggle"
-    aria-label="Number status"
-    hideSingleSelectionIndicator
-    [value]="statusFilter()"
-    (change)="setStatus($event.value)"
-  >
-    <mat-button-toggle [value]="null">All</mat-button-toggle>
-    @for (option of statusOptions; track option.value) {
-      <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
-    }
-  </mat-button-toggle-group>
+  <app-status-filter
+    label="Number status"
+    [statuses]="statuses"
+    [value]="statusFilter() ?? null"
+    (valueChange)="setStatus($event)"
+  />
   <p class="app-result-count app-numeric" aria-live="polite">
     @if (!numbers.isFirstLoad() && !numbers.error()) {
       {{ loadedCount() }}

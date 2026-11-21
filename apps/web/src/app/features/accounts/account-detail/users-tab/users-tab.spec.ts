@@ -55,6 +55,13 @@ describe('UsersTab', () => {
     expect(page.host().querySelector('mat-select')?.textContent).toContain('Ottawa HQ');
   });
 
+  it('leaves out the voicemail column below 1280px wide', async () => {
+    const api = anAccountApi().on('/accounts/acc_northwind/users', aPage([ADA]));
+    const page = await setUpAccountPage(api, '/accounts/acc_northwind/users', { width: 1024 });
+
+    expect(textsOf(page.host(), 'th')).toEqual(['User', 'Site', 'Ext', 'DID', 'Device', 'Status']);
+  });
+
   const typeInBox = (page: Awaited<ReturnType<typeof setUpAccountPage>>, text: string) => {
     const input = page.host().querySelector<HTMLInputElement>('input[type="search"]')!;
     input.value = text;

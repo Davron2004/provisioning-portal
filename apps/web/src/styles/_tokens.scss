@@ -11,6 +11,10 @@
 //
 // This file adds the few things Material does not have:
 //
+//   Surfaces  --app-surface-card        cards, tables and panels: one step above the page
+//             --app-surface-card-muted  inside a card: header bands, row hover
+//             The page is --mat-sys-surface. In light, cards are white on a tinted page;
+//             in dark, elevation shows as a lighter surface (never a darker one).
 //   Spacing   --app-space-{1..10}       4px grid: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64
 //   Radius    --app-radius-{sm,md,lg,xl,full}
 //   Layout    --app-toolbar-height, --app-content-max-width
@@ -27,6 +31,15 @@
 // in columns or update live: extensions, phone numbers, counts, timestamps.
 
 :root {
+  --app-surface-card: light-dark(
+    var(--mat-sys-surface-container-lowest),
+    var(--mat-sys-surface-container-low)
+  );
+  --app-surface-card-muted: light-dark(
+    var(--mat-sys-surface-container-low),
+    var(--mat-sys-surface-container)
+  );
+
   --app-space-1: 4px;
   --app-space-2: 8px;
   --app-space-3: 12px;

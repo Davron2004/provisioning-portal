@@ -29,6 +29,11 @@ import { OrderDraftHandoff } from '../orders/order-draft-handoff';
 import { OrderReview } from '../orders/order-review/order-review';
 import { OrderSubmission } from '../orders/order-submission';
 import { describeOperation, examplePrompts, providerLabel } from './intent-text';
+import {
+  GuardsUnsavedChanges,
+  UnsavedChangesPrompt,
+  confirmBeforeUnload,
+} from '../../core/navigation/unsaved-changes';
 
 /** The longest request the API accepts (InterpretRequest). */
 const MAX_REQUEST = 2000;
@@ -69,7 +74,7 @@ interface Interpretation {
   templateUrl: './assistant-page.html',
   styleUrl: './assistant-page.scss',
 })
-export class AssistantPage {
+export class AssistantPage implements GuardsUnsavedChanges {
   /** Query parameter: `?accountId=`. */
   readonly accountId = input<string>();
 
@@ -116,7 +121,15 @@ export class AssistantPage {
       this.result()?.state !== 'loading',
   );
 
+  /** Set when the draft goes on to the builder, which keeps it: nothing is lost. */
+  private handingOff = false;
+  /** An interpreted order is on screen and not submitted. */
+  private readonly hasUnsavedPreview = () =>
+    !this.handingOff && !this.submission.submitted() && !!this.response()?.preview;
+
   constructor() {
+    confirmBeforeUnload(this.hasUnsavedPreview);
+
     // One request at a time: a new one cancels the one in flight.
     this.requests
       .pipe(
@@ -143,6 +156,17 @@ export class AssistantPage {
         this.result.set(result);
         this.submission.reset();
       });
+  }
+
+  unsavedChanges(): UnsavedChangesPrompt | null {
+    return this.hasUnsavedPreview()
+      ? {
+          title: 'Discard this preview?',
+          message:
+            'The order the assistant prepared has not been submitted. Leaving now discards it.',
+          confirmLabel: 'Discard',
+        }
+      : null;
   }
 
   protected selectAccount(accountId: string): void {
@@ -186,6 +210,9 @@ export class AssistantPage {
       return;
     }
     this.handoffs.put({ accountId: result.accountId, draft, prompt: result.text });
-    void this.router.navigate(['/accounts', result.accountId, 'orders', 'new']);
+    this.handingOff = true;
+    void this.router
+      .navigate(['/accounts', result.accountId, 'orders', 'new'])
+      .finally(() => (this.handingOff = false));
   }
 }

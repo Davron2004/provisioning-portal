@@ -1,9 +1,7 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, Provider } from '@angular/core';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { of } from 'rxjs';
 import { provideAppIcons } from '../app/core/icons/icons';
 import { ACCOUNT_TAB_ROUTES } from '../app/features/accounts/account-detail/account-detail.routes';
 import { AccountDetailPage } from '../app/features/accounts/account-detail/account-detail-page';
@@ -11,6 +9,7 @@ import { FakeApi, provideFakeApi } from './fake-api';
 import { aDevice, aPage, aSite, anAccount } from './fixtures';
 import { FakeRealtime, provideFakeRealtime } from './realtime-fake';
 import { provideTestConfig } from './test-config';
+import { FakeViewport, provideViewport } from './viewport';
 
 @Component({ template: 'stub page' })
 class StubPage {}
@@ -50,22 +49,15 @@ export interface AccountPageTest {
 
 /**
  * The account page with its real tab routes, against a FakeApi.
- * `handset` swaps in a phone-sized BreakpointObserver.
+ * `width` sets the window width the layout queries see (default: a wide desktop);
+ * `handset` is a phone-sized one.
  */
 export async function setUpAccountPage(
   api: FakeApi,
   url: string,
-  { handset = false } = {},
+  { handset = false, width }: { handset?: boolean; width?: number } = {},
 ): Promise<AccountPageTest> {
   const realtime = new FakeRealtime();
-  const providers: Provider[] = handset
-    ? [
-        {
-          provide: BreakpointObserver,
-          useValue: { observe: () => of({ matches: true }), isMatched: () => true },
-        },
-      ]
-    : [];
   TestBed.configureTestingModule({
     providers: [
       provideRouter(
@@ -85,7 +77,7 @@ export async function setUpAccountPage(
       provideTestConfig(),
       provideFakeApi(api),
       provideFakeRealtime(realtime),
-      ...providers,
+      provideViewport(new FakeViewport(width ?? (handset ? 390 : 1440))),
     ],
   });
   const harness = await RouterTestingHarness.create();

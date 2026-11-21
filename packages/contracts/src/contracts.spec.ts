@@ -5,6 +5,7 @@ import {
   CreateOrderRequest,
   DraftLine,
   OrderLine,
+  SearchResponse,
   UserChanges,
 } from './index';
 
@@ -77,5 +78,18 @@ describe('contracts', () => {
       accountId: '*',
     });
     expect(ClientMessage.safeParse({ action: 'drop_table' }).success).toBe(false);
+  });
+
+  it('requires a search total for every entity', () => {
+    const response = { query: 'kan', total: 3, hits: [], tookMs: 4 };
+    expect(
+      SearchResponse.safeParse({ ...response, totals: { user: 2, number: 1, order: 0 } }).success,
+    ).toBe(true);
+    expect(SearchResponse.safeParse({ ...response, totals: { user: 2, number: 1 } }).success).toBe(
+      false,
+    );
+    expect(
+      SearchResponse.safeParse({ ...response, totals: { user: -1, number: 1, order: 0 } }).success,
+    ).toBe(false);
   });
 });

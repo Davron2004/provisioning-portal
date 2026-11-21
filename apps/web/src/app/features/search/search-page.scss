@@ -69,6 +69,7 @@
     list-style: none;
     border: 1px solid var(--mat-sys-outline-variant);
     border-radius: var(--app-radius-lg);
+    background: var(--app-surface-card);
     overflow: hidden;
   }
 
@@ -88,13 +89,13 @@
   transition: background-color var(--app-duration-short) var(--app-ease-standard);
 
   &:hover {
-    background: var(--mat-sys-surface-container-low);
+    background: var(--app-surface-card-muted);
   }
 
   &:focus-visible {
     outline: 2px solid var(--mat-sys-primary);
     outline-offset: -2px;
-    background: var(--mat-sys-surface-container-low);
+    background: var(--app-surface-card-muted);
   }
 }
 

@@ -41,7 +41,7 @@ import { Skeleton } from '../skeleton/skeleton';
     .header {
       block-size: 44px;
       border-top: 0;
-      background: var(--mat-sys-surface-container-low);
+      background: var(--app-surface-card-muted);
     }
   `,
 })

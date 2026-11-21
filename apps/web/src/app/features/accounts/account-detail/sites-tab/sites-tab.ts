@@ -115,7 +115,7 @@ export function localTime(timezone: string, now: number): string {
       padding: var(--app-space-5) var(--app-space-5) var(--app-space-3);
       border: 1px solid var(--mat-sys-outline-variant);
       border-radius: var(--app-radius-lg);
-      background: var(--mat-sys-surface-container-lowest);
+      background: var(--app-surface-card);
     }
     .name {
       font: var(--mat-sys-title-medium);

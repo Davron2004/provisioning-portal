@@ -14,7 +14,13 @@ import {
   type SearchLookups,
 } from './documents';
 import { SearchIndexer } from './indexer';
-import { buildSearchQuery, safeHighlight, SearchService, toSearchHit } from './search-service';
+import {
+  buildSearchQuery,
+  safeHighlight,
+  SearchService,
+  toSearchHit,
+  toTotals,
+} from './search-service';
 
 const lookups: SearchLookups = {
   accountName: async () => 'Test Co',
@@ -31,7 +37,7 @@ const priya = user({
 
 describe('search documents', () => {
   it('formats North American numbers', () => {
-    expect(formatE164('+16135550142')).toBe('+1 613-555-0142');
+    expect(formatE164('+16135550142')).toBe('(613) 555-0142');
   });
 
   it('describes a user with name, extension, number and site, and every way to type the number', async () => {
@@ -40,7 +46,7 @@ describe('search documents', () => {
       entity: 'user',
       id: 'u1',
       title: 'Priya Shah',
-      subtitle: 'Ext 2104 · +1 613-555-0142 · Kanata Campus',
+      subtitle: 'Ext 2104 · (613) 555-0142 · Kanata Campus',
       status: 'active',
       digits: ['2104', '16135550142', '6135550142'],
       text: ['u1@test.example.com', 'Kanata Campus', 'Test Co'],
@@ -55,7 +61,7 @@ describe('search documents', () => {
     expect(assigned.subtitle).toBe('Kanata Campus · Assigned to Sofia Beaulieu');
     const available = await numberDocument(number('+16135550143', 'site_k'), lookups);
     expect(available).toMatchObject({
-      title: '+1 613-555-0143',
+      title: '(613) 555-0143',
       subtitle: 'Kanata Campus · Available',
     });
   });
@@ -94,10 +100,27 @@ describe('search query and results', () => {
     expect(numbered.query.bool.should).toContainEqual({
       term: { digits: { value: '6135550142', boost: 2 } },
     });
-    expect(numbered.query.bool.filter).toEqual([
-      { term: { entity: 'user' } },
-      { term: { accountId: 'acc_a' } },
-    ]);
+    expect(numbered.query.bool.filter).toEqual([{ term: { accountId: 'acc_a' } }]);
+    expect(numbered.post_filter).toEqual({ term: { entity: 'user' } });
+    expect(named.post_filter).toBeUndefined();
+  });
+
+  it('counts every entity, whatever the entity filter, for the chip totals', () => {
+    const query = buildSearchQuery({ q: 'Priya', entity: 'order', limit: 20 });
+    // The entity filter is a post_filter, so it narrows the hits but not the aggregation.
+    expect(query.query.bool.filter).toEqual([]);
+    expect(query.aggs).toEqual({ entities: { terms: { field: 'entity', size: 3 } } });
+  });
+
+  it('fills a total for every entity, 0 when nothing matched', () => {
+    expect(
+      toTotals([
+        { key: 'user', doc_count: 4 },
+        { key: 'order', doc_count: 2 },
+        { key: 'unexpected', doc_count: 9 },
+      ]),
+    ).toEqual({ user: 4, number: 0, order: 2 });
+    expect(toTotals()).toEqual({ user: 0, number: 0, order: 0 });
   });
 
   it('escapes highlighted text so only <mark> survives', () => {
@@ -138,11 +161,17 @@ describe('search query and results', () => {
           total: { value: 1 },
           hits: [{ _source: { ...(await userDocument(priya, lookups)) } }],
         },
+        aggregations: { entities: { buckets: [{ key: 'user', doc_count: 1 }] } },
       },
     }));
     const service = new SearchService({ search } as unknown as Client, 'idx');
     const result = await service.search({ q: 'pri', limit: 10 });
-    expect(result).toMatchObject({ query: 'pri', total: 1, tookMs: 7 });
+    expect(result).toMatchObject({
+      query: 'pri',
+      total: 1,
+      totals: { user: 1, number: 0, order: 0 },
+      tookMs: 7,
+    });
     expect(result.hits[0]).toMatchObject({ entity: 'user', title: 'Priya Shah', highlight: null });
 
     const missing = new SearchService(
@@ -157,6 +186,7 @@ describe('search query and results', () => {
     );
     await expect(missing.search({ q: 'x', limit: 10 })).resolves.toMatchObject({
       total: 0,
+      totals: { user: 0, number: 0, order: 0 },
       hits: [],
     });
   });

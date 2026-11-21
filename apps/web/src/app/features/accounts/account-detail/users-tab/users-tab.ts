@@ -11,7 +11,11 @@ import { pagedList } from '../../../../core/api/paged-list';
 import { UsersApi } from '../../../../core/api/users-api';
 import { injectQueryParamsUpdater, injectSearchParam } from '../../../../core/routing/query-params';
 import { deviceName, fullName, resultCountLabel } from '../../../../shared/format/labels';
-import { HANDSET_LAYOUT, injectMediaQuery } from '../../../../shared/layout/media-query';
+import {
+  HANDSET_LAYOUT,
+  MEDIUM_LAYOUT,
+  injectMediaQuery,
+} from '../../../../shared/layout/media-query';
 import { PhoneNumberPipe } from '../../../../shared/pipes/phone-number.pipe';
 import { EmptyState } from '../../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../../shared/ui/error-state/error-state';
@@ -19,10 +23,12 @@ import { LoadMore } from '../../../../shared/ui/load-more/load-more';
 import { StatusChip } from '../../../../shared/ui/status-chip/status-chip';
 import { TableSkeleton } from '../../../../shared/ui/table-skeleton/table-skeleton';
 import { AccountStore } from '../account-store';
+import { Truncate } from '../../../../shared/ui/truncate/truncate';
 
 @Component({
   selector: 'app-users-tab',
   imports: [
+    Truncate,
     EmptyState,
     ErrorState,
     LoadMore,
@@ -50,6 +56,8 @@ export class UsersTab {
   private readonly updateQuery = injectQueryParamsUpdater();
   protected readonly search = injectSearchParam(this.q);
   protected readonly handset = injectMediaQuery(HANDSET_LAYOUT);
+  /** Narrower tables leave out the voicemail column (it shows in the user's order lines). */
+  protected readonly medium = injectMediaQuery(MEDIUM_LAYOUT);
 
   protected readonly siteId = computed(() => this.site() || null);
   protected readonly users = pagedList(
@@ -81,7 +89,7 @@ export class UsersTab {
       this.siteId() ? null : 'site',
       'extension',
       'did',
-      'voicemail',
+      this.medium() ? null : 'voicemail',
       'device',
       'status',
     ].filter((column): column is string => column !== null),

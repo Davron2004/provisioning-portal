@@ -18,16 +18,26 @@ function aHit(overrides: Partial<SearchHit> = {}): SearchHit {
     accountId: 'acc_northwind',
     accountName: 'Northwind Dental',
     title: 'Camille Thompson',
-    subtitle: 'Ext 2410 · +1 416-555-0100 · Toronto Lab',
+    subtitle: 'Ext 2410 · (416) 555-0100 · Toronto Lab',
     status: 'active',
     highlight: '<mark>Camille</mark> Thompson',
     ...overrides,
   };
 }
 
-const response = (hits: SearchHit[], total = hits.length): SearchResponse => ({
+const response = (
+  hits: SearchHit[],
+  total = hits.length,
+  totals: Partial<SearchResponse['totals']> = {},
+): SearchResponse => ({
   query: 'x',
   total,
+  totals: {
+    user: hits.filter((hit) => hit.entity === 'user').length,
+    number: hits.filter((hit) => hit.entity === 'number').length,
+    order: hits.filter((hit) => hit.entity === 'order').length,
+    ...totals,
+  },
   hits,
   tookMs: 12.4,
 });
@@ -129,17 +139,24 @@ describe('SearchPage', () => {
       0,
       response(
         [
-          aHit({ entity: 'number', id: '+14165550100', title: '+1 416-555-0100', highlight: null }),
+          aHit({ entity: 'number', id: '+14165550100', title: '(416) 555-0100', highlight: null }),
           aHit(),
           aHit({ id: 'usr_2', title: 'Thea Campbell', highlight: 'Thea <mark>Camp</mark>bell' }),
         ],
         156,
+        { user: 120, number: 36 },
       ),
     );
     await flush();
 
     expect(textsOf(host, '.group h2')).toEqual(['Numbers 1', 'Users 2']);
-    expect(textsOf(host, 'mat-chip-option')).toEqual(['All 3', 'Users 2', 'Numbers 1', 'Orders 0']);
+    // The chips count every match, not just the page of hits.
+    expect(textsOf(host, 'mat-chip-option')).toEqual([
+      'All 156',
+      'Users 120',
+      'Numbers 36',
+      'Orders 0',
+    ]);
     expect(host.querySelector('.summary')?.textContent).toContain(
       'Top 3 of 156 results · took 12 ms',
     );
@@ -165,13 +182,16 @@ describe('SearchPage', () => {
 
   it('filters by entity through the URL, keeping counts for every entity', async () => {
     const { host, flush } = await setUp('/search?q=cam&entity=order');
-    expect(api.calls.map((c) => c.query.entity)).toEqual([null, 'order']);
-    api.answer(0, response([aHit(), aHit({ entity: 'order', id: 'ord_1', title: 'Add 2 users' })]));
-    api.answer(1, response([aHit({ entity: 'order', id: 'ord_1', title: 'Add 2 users' })]));
+    // One request: the API counts every entity even when the hits are filtered.
+    expect(api.calls.map((c) => c.query.entity)).toEqual(['order']);
+    api.answer(
+      0,
+      response([aHit({ entity: 'order', id: 'ord_1', title: 'Add 2 users' })], 1, { user: 4 }),
+    );
     await flush();
 
     expect(textsOf(host, '.group h2')).toEqual(['Orders 1']);
-    expect(textsOf(host, 'mat-chip-option')[1]).toBe('Users 1');
+    expect(textsOf(host, 'mat-chip-option')).toEqual(['All 5', 'Users 4', 'Numbers 0', 'Orders 1']);
 
     host.querySelectorAll<HTMLElement>('mat-chip-option .mdc-evolution-chip__action')[0]!.click();
     await flush();

@@ -102,7 +102,7 @@ const STATUS_ORDER: readonly OrderStatus[] = [
       color: var(--mat-sys-on-surface);
       text-decoration: none;
       &:hover {
-        background: var(--mat-sys-surface-container-low);
+        background: var(--app-surface-card-muted);
       }
     }
     .dot {

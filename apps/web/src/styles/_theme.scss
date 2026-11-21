@@ -32,6 +32,28 @@ html {
     )
   );
 
+  // Material's letter-spacing is tuned for Roboto; Inter has its own spacing built in
+  // and looks loose with extra tracking. Small labels keep a hint of it.
+  --mat-sys-body-large-tracking: 0;
+  --mat-sys-body-medium-tracking: 0;
+  --mat-sys-body-small-tracking: 0;
+  --mat-sys-label-large-tracking: 0;
+  --mat-sys-label-medium-tracking: 0.006rem;
+  --mat-sys-label-small-tracking: 0.006rem;
+  --mat-sys-title-medium-tracking: 0;
+  --mat-sys-title-small-tracking: 0;
+
+  // Keyboard focus: Material's components only show a faint state layer on focus, which
+  // is easy to miss. Strong focus indicators draw a ring that matches the app's own
+  // `:focus-visible` outline (2px, primary) on buttons, chips, tabs, toggles and menus.
+  @include mat.strong-focus-indicators(
+    (
+      border-color: var(--mat-sys-primary),
+      border-width: 2px,
+      border-radius: var(--app-radius-md),
+    )
+  );
+
   // Calmer than Material's defaults for a dense operations console.
   @include mat.toolbar-overrides(
     (
@@ -80,6 +102,16 @@ html {
       label-text-size: 14px,
       label-text-weight: 500,
       label-text-tracking: 0.005em,
+    )
+  );
+  // Dialogs share the cards' corner radius and the page headings' weight.
+  @include mat.dialog-overrides(
+    (
+      container-shape: var(--app-radius-xl),
+      subhead-size: 20px,
+      subhead-line-height: 28px,
+      subhead-weight: 600,
+      subhead-tracking: -0.01em,
     )
   );
   @include mat.button-overrides(

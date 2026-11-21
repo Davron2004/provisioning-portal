@@ -33,6 +33,7 @@ import {
   filterAccounts,
   sortAccounts,
 } from '../account-list';
+import { Truncate } from '../../../shared/ui/truncate/truncate';
 
 const STATUSES = AccountStatus.options;
 const PLANS = AccountPlan.options;
@@ -41,6 +42,7 @@ const DEFAULT_SORT: AccountSortKey = 'name';
 @Component({
   selector: 'app-accounts-page',
   imports: [
+    Truncate,
     EmptyState,
     ErrorState,
     LoadMore,

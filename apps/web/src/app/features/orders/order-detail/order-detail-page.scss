@@ -23,15 +23,21 @@ h2 {
   color: var(--mat-sys-on-surface-variant);
 }
 
-.fact {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.facts {
+  min-width: 0;
+  overflow-wrap: anywhere;
 
   mat-icon {
     width: 18px;
     height: 18px;
+    margin-right: 2px;
+    vertical-align: -4px;
   }
+}
+
+.sep {
+  margin: 0 var(--app-space-2);
+  color: var(--mat-sys-outline);
 }
 
 .prompt {
@@ -76,6 +82,7 @@ h2 {
   padding: var(--app-space-5) var(--app-space-6) var(--app-space-6);
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--app-radius-lg);
+  background: var(--app-surface-card);
 }
 
 .panel-head {
@@ -126,7 +133,7 @@ h2 {
   thead th {
     height: 44px;
     padding-block: 0;
-    background: var(--mat-sys-surface-container-low);
+    background: var(--app-surface-card-muted);
     color: var(--mat-sys-on-surface-variant);
     font: var(--mat-sys-label-large);
     white-space: nowrap;

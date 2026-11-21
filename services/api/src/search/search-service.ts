@@ -1,5 +1,5 @@
 import type { Client } from '@opensearch-project/opensearch';
-import type { SearchEntity, SearchHit, SearchResponse } from '@provisioning/contracts';
+import { SearchEntity, type SearchHit, type SearchResponse } from '@provisioning/contracts';
 import type { SearchDocument } from './documents';
 
 export interface SearchParams {
@@ -27,7 +27,9 @@ const POST = '\uE001';
  *  - when the query has 3+ digits, its digits match the n-gram field, so a
  *    partial or formatted phone number or an extension finds its user and
  *    number.
- * Entity and account are filters, not scoring clauses.
+ * Entity and account are filters, not scoring clauses. The account filter
+ * applies to everything; the entity filter is a post_filter, so the
+ * `entities` aggregation still counts every entity (the chip totals).
  */
 export function buildSearchQuery(params: SearchParams) {
   const q = params.q.trim();
@@ -47,13 +49,14 @@ export function buildSearchQuery(params: SearchParams) {
   ];
   if (digits.length >= 3) should.push({ term: { digits: { value: digits, boost: 2 } } });
   const filter: object[] = [];
-  if (params.entity) filter.push({ term: { entity: params.entity } });
   if (params.accountId) filter.push({ term: { accountId: params.accountId } });
 
   return {
     size: params.limit,
     track_total_hits: true,
     query: { bool: { should, minimum_should_match: 1, filter } },
+    ...(params.entity ? { post_filter: { term: { entity: params.entity } } } : {}),
+    aggs: { entities: { terms: { field: 'entity', size: SearchEntity.options.length } } },
     highlight: {
       pre_tags: [PRE],
       post_tags: [POST],
@@ -110,6 +113,19 @@ export function toSearchHit(hit: RawHit): SearchHit | null {
   };
 }
 
+/** Every entity's count from the `entities` aggregation, 0 for those with no matches. */
+export function toTotals(buckets: readonly { key: string; doc_count: number }[] = []) {
+  const totals = Object.fromEntries(SearchEntity.options.map((entity) => [entity, 0])) as Record<
+    SearchEntity,
+    number
+  >;
+  for (const { key, doc_count } of buckets) {
+    const entity = SearchEntity.safeParse(key);
+    if (entity.success) totals[entity.data] = doc_count;
+  }
+  return totals;
+}
+
 export class SearchService {
   constructor(
     private readonly client: Client,
@@ -127,19 +143,27 @@ export class SearchService {
     } catch (error) {
       // Before the first write there is no index yet: that is "no results", not an outage.
       if (errorType(error) === 'index_not_found_exception') {
-        return { query: params.q, total: 0, hits: [], tookMs: Date.now() - started };
+        return {
+          query: params.q,
+          total: 0,
+          totals: toTotals(),
+          hits: [],
+          tookMs: Date.now() - started,
+        };
       }
       throw error;
     }
     const body = response.body as unknown as {
       took?: number;
       hits: { total?: number | { value: number }; hits: RawHit[] };
+      aggregations?: { entities?: { buckets?: { key: string; doc_count: number }[] } };
     };
     const total =
       typeof body.hits.total === 'number' ? body.hits.total : (body.hits.total?.value ?? 0);
     return {
       query: params.q,
       total,
+      totals: toTotals(body.aggregations?.entities?.buckets),
       hits: body.hits.hits.map(toSearchHit).filter((h): h is SearchHit => h !== null),
       tookMs: body.took ?? Date.now() - started,
     };

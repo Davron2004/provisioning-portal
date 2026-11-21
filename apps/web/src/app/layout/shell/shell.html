@@ -11,9 +11,7 @@
       [attr.aria-label]="navExpanded() ? 'Collapse navigation' : 'Expand navigation'"
       (click)="toggleNav()"
     >
-      <mat-icon
-        [svgIcon]="compact() ? 'menu' : railCollapsed() ? 'left_panel_open' : 'left_panel_close'"
-      />
+      <mat-icon [svgIcon]="compact() ? 'menu' : rail() ? 'left_panel_open' : 'left_panel_close'" />
     </button>
 
     <a class="brand" routerLink="/overview" aria-label="Provisioning Portal, overview">
@@ -44,13 +42,13 @@
   <mat-sidenav
     id="app-navigation"
     class="sidenav"
-    [class.rail]="!compact() && railCollapsed()"
+    [class.rail]="rail()"
     [mode]="compact() ? 'over' : 'side'"
     [opened]="compact() ? drawerOpen() : true"
     [disableClose]="!compact()"
     (closedStart)="drawerOpen.set(false)"
   >
-    <app-side-nav [collapsed]="!compact() && railCollapsed()" />
+    <app-side-nav [collapsed]="rail()" />
   </mat-sidenav>
 
   <mat-sidenav-content #content class="content">

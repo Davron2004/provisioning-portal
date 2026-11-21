@@ -31,7 +31,7 @@
   padding: var(--app-space-5);
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--app-radius-lg);
-  background: var(--mat-sys-surface-container-lowest);
+  background: var(--app-surface-card);
 }
 
 .tile-label {
@@ -95,7 +95,7 @@
 .panel {
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--app-radius-lg);
-  background: var(--mat-sys-surface-container-lowest);
+  background: var(--app-surface-card);
   overflow: hidden;
 }
 
@@ -138,7 +138,7 @@
   }
 
   &:has(.app-row-link):hover {
-    background: var(--mat-sys-surface-container-low);
+    background: var(--app-surface-card-muted);
   }
 }
 

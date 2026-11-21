@@ -30,7 +30,10 @@ export class OrderSubmission {
 
   private readonly submittingState = signal(false);
   private readonly errorState = signal<unknown>(null);
+  private readonly submittedState = signal(false);
   readonly submitting = this.submittingState.asReadonly();
+  /** The order was created; the page is on its way to it, nothing is left unsaved. */
+  readonly submitted = this.submittedState.asReadonly();
   /** Why the last submit failed; cleared by the next attempt or `reset()`. */
   readonly error = this.errorState.asReadonly();
 
@@ -62,6 +65,7 @@ export class OrderSubmission {
       )
       .subscribe({
         next: (order) => {
+          this.submittedState.set(true);
           this.notifications.success('Order submitted. Provisioning starts in a moment.');
           void this.router.navigate(['/accounts', order.accountId, 'orders', order.id]);
         },

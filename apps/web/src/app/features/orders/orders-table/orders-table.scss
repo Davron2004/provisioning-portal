@@ -1,0 +1,81 @@
+// Text columns share what is left after the fixed-content ones (status, lines,
+// source, updated); `max-width: 0` lets their text truncate instead of widening the table.
+.mat-column-title {
+  width: 40%;
+  max-width: 0;
+}
+
+.mat-column-submittedBy {
+  width: 20%;
+  max-width: 0;
+}
+
+.with-account {
+  .mat-column-title {
+    width: 30%;
+  }
+
+  .mat-column-account {
+    width: 18%;
+    max-width: 0;
+  }
+
+  .mat-column-submittedBy {
+    width: 16%;
+  }
+}
+
+// Without the source and submitter columns, the order and account take their space.
+.narrow {
+  .mat-column-title {
+    width: 50%;
+  }
+
+  &.with-account {
+    .mat-column-title {
+      width: 38%;
+    }
+
+    .mat-column-account {
+      width: 26%;
+    }
+  }
+}
+
+.mat-column-source,
+.mat-column-updated {
+  white-space: nowrap;
+}
+
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  white-space: nowrap;
+}
+
+.meter {
+  display: inline-flex;
+  width: 40px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--app-radius-full);
+  background: var(--mat-sys-surface-container-highest);
+
+  .ok {
+    background: var(--app-status-success-accent);
+  }
+
+  .bad {
+    background: var(--app-status-error-accent);
+  }
+
+  span {
+    transition: width var(--app-duration-medium) var(--app-ease-standard);
+  }
+}
+
+.card-meta {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
