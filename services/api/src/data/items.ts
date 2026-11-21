@@ -43,6 +43,8 @@ export const siteItem = (site: Site): Item => ({
 
 export const userItem = (user: UserRecord): Item => {
   const nameKey = nameSortKey(user.lastName, user.firstName, user.id);
+  // The lock is absent (not NULL) when unlocked, so `attribute_not_exists` conditions work.
+  const { pendingOrderId, ...rest } = user;
   return {
     ...keys.user(user.accountId, user.id),
     entity: Entity.User,
@@ -50,7 +52,8 @@ export const userItem = (user: UserRecord): Item => {
     GSI1SK: nameKey,
     GSI2PK: indexKeys.siteUsers(user.siteId),
     GSI2SK: nameKey,
-    ...user,
+    ...rest,
+    ...(pendingOrderId ? { pendingOrderId } : {}),
   };
 };
 
