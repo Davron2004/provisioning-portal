@@ -1,8 +1,11 @@
 import { HttpClient, HttpParams, HttpResourceRef, httpResource } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
 import * as z from 'zod';
 import { AppConfig } from '../config/app-config';
+
+/** Largest page the list endpoints return. */
+export const MAX_PAGE_SIZE = 100;
 
 export type QueryParams = Readonly<Record<string, string | number | boolean | null | undefined>>;
 
@@ -56,6 +59,23 @@ export class ApiClient {
     return this.http
       .get<unknown>(this.url(read.path), { params: toHttpParams(read.params) })
       .pipe(map((body) => schema.parse(body)));
+  }
+
+  /**
+   * Every item of a cursor-paginated list, following `nextCursor` page by page.
+   * Only for lists known to be short (one account's users or free numbers), where a
+   * picker needs all of them at once; anything longer belongs in a "load more" list.
+   */
+  getAll<T>(
+    schema: z.ZodType<{ items: T[]; nextCursor: string | null }>,
+    read: ApiRead,
+  ): Observable<T[]> {
+    const pageAt = (cursor: string | null) =>
+      this.get(schema, { ...read, params: { ...read.params, limit: MAX_PAGE_SIZE, cursor } });
+    return pageAt(null).pipe(
+      expand((page) => (page.nextCursor ? pageAt(page.nextCursor) : EMPTY)),
+      reduce<{ items: T[] }, T[]>((all, page) => [...all, ...page.items], []),
+    );
   }
 
   post<S extends z.ZodType>(schema: S, path: string, body: unknown): Observable<z.output<S>> {

@@ -1,0 +1,150 @@
+<p class="app-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+
+@if (order(); as o) {
+  <app-page-header [title]="o.title">
+    <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+    <div class="meta">
+      <app-status-chip [status]="o.status" />
+      <span class="fact">
+        <mat-icon
+          [svgIcon]="o.source === 'assistant' ? 'wand_stars' : 'person'"
+          aria-hidden="true"
+        />
+        {{ sourceLabel(o.source) }}
+      </span>
+      <span class="fact"
+        >Submitted by {{ o.submittedBy }}, <app-relative-time [value]="o.createdAt"
+      /></span>
+      @if (duration(); as took) {
+        <span class="fact app-numeric">Took {{ took }}</span>
+      }
+    </div>
+    @if (canRetry()) {
+      <button actions matButton="filled" type="button" [disabled]="retrying()" (click)="retry()">
+        <mat-icon svgIcon="replay" />
+        Retry failed lines
+      </button>
+    }
+  </app-page-header>
+
+  @if (o.prompt) {
+    <figure class="prompt">
+      <mat-icon svgIcon="wand_stars" aria-hidden="true" />
+      <div>
+        <figcaption>Requested with the assistant</figcaption>
+        <blockquote>{{ o.prompt }}</blockquote>
+      </div>
+    </figure>
+  }
+
+  <section class="panel" aria-labelledby="progress-heading">
+    <div class="panel-head">
+      <h2 id="progress-heading">Progress</h2>
+      @if (running()) {
+        <span
+          class="live"
+          [attr.data-state]="realtime.state()"
+          [matTooltip]="
+            realtime.state() === 'live'
+              ? 'Updates appear as each line is provisioned.'
+              : 'Live updates are interrupted; checking for changes every few seconds.'
+          "
+          tabindex="0"
+        >
+          <span class="dot" aria-hidden="true"></span>
+          {{ liveLabel() }}
+        </span>
+      }
+    </div>
+    <app-order-progress [order]="o" />
+  </section>
+
+  <section class="section" aria-labelledby="lines-heading">
+    <h2 id="lines-heading">Lines</h2>
+    @if (handset()) {
+      <ol class="app-card-list" aria-labelledby="lines-heading">
+        @for (line of o.lines; track line.lineId; let i = $index) {
+          @let user = userOf(line);
+          <li class="app-card" [attr.data-status]="line.status">
+            <div class="app-card-top">
+              <app-action-badge [action]="line.action" />
+              <app-status-chip [status]="line.status" />
+            </div>
+            <div>
+              <span class="app-card-title">{{ user.firstName }} {{ user.lastName }}</span>
+              <span class="app-cell-secondary app-numeric"
+                >Line {{ i + 1 }} · Ext {{ user.extension }}
+                @if (user.did) {
+                  · {{ user.did | phoneNumber }}
+                }
+              </span>
+            </div>
+            <app-line-step [line]="line" />
+          </li>
+        }
+      </ol>
+    } @else {
+      <div class="app-table-card">
+        <div class="app-table-scroll">
+          <table class="lines">
+            <thead>
+              <tr>
+                <th scope="col" class="num"><span class="app-visually-hidden">Line</span>#</th>
+                <th scope="col">Change</th>
+                <th scope="col">User</th>
+                <th scope="col">Status</th>
+                <th scope="col">Details</th>
+                <th scope="col" class="end">Attempts</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of o.lines; track line.lineId; let i = $index) {
+                @let user = userOf(line);
+                <tr [attr.data-status]="line.status">
+                  <td class="num app-numeric">{{ i + 1 }}</td>
+                  <td><app-action-badge [action]="line.action" /></td>
+                  <th scope="row" class="who">
+                    <span class="name">{{ user.firstName }} {{ user.lastName }}</span>
+                    <span class="app-cell-secondary app-numeric"
+                      >Ext {{ user.extension }}
+                      @if (user.did) {
+                        · {{ user.did | phoneNumber }}
+                      }
+                    </span>
+                  </th>
+                  <td><app-status-chip [status]="line.status" /></td>
+                  <td class="detail">
+                    <app-line-step [line]="line" />
+                  </td>
+                  <td class="end app-numeric">{{ line.attempts }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </section>
+
+  <section class="section" aria-labelledby="activity-heading">
+    <h2 id="activity-heading">Activity</h2>
+    <app-order-timeline [events]="o.events" />
+  </section>
+} @else if (resource.error(); as error) {
+  <app-page-header title="Order">
+    <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+  </app-page-header>
+  <app-error-state
+    heading="Could not load this order"
+    [error]="error"
+    (retry)="resource.reload()"
+  />
+} @else {
+  <app-page-header title="Order" [loading]="true">
+    <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+  </app-page-header>
+  <div class="loading" aria-busy="true">
+    <app-skeleton height="148px" />
+    <app-skeleton height="240px" />
+  </div>
+}

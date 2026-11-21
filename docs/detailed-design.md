@@ -868,6 +868,42 @@ its page. When an order for the open account finishes, the account and its
 sites reload, since their counters moved. Without a connection the streams are
 quiet and the pages show what they loaded.
 
+### Orders: build, review, follow
+
+**Build.** The order builder (`features/orders/order-builder`) edits an
+`OrderForm` (`order-form/order-form.ts`): a typed `FormArray` with one group
+per line (add, change or remove a user) and the checks the client can make
+before asking the server: required fields, email format and uniqueness in the
+account, an extension's format, site range and owner, and a MAC address's
+format. The MAC field exists only for hardware that takes one (the control is
+disabled otherwise, so it is neither validated nor sent); it stays optional,
+because the API provisions such a phone without device configuration and says
+so as a warning. Extension and number default to "auto": the draft leaves them
+out and preview allocates them. Pickers search every user and free number of
+the account, loaded whole (`ApiClient.getAll`, an account has a few hundred at
+most).
+
+**Review.** Preview is the authority. Its result renders in `OrderReview`, the
+same component the assistant uses: a diff per line (new values, with
+server-assigned ones tagged "Auto"; `before → after` for changes; removals
+struck through), order-level issues on top and line issues under their line.
+Errors disable the submit; warnings do not. Error findings, and the issues of a
+`422 validation_failed`, are also put back on the form field they name, so
+"Back to edit" lands on what to fix. `OrderSubmission` generates one
+idempotency key per preview and reuses it for every attempt to submit that
+preview, so a retried submit can never create a second order.
+
+**Follow.** The order page fetches the order once and then merges pushes for
+its account; the version with the later `updatedAt` wins, so a slow fetch
+cannot overwrite a newer push. It re-fetches after a reconnect and, while the
+socket is down and the order is still running, polls every five seconds.
+"Retry failed lines" shows the retried lines as pending at once, then follows
+the server; if the API refuses (`409`), the page puts the order back and
+re-reads it. Status changes (not every step) are announced through a polite
+live region; the step indicator pulses only when reduced motion is off.
+`/orders` overlays the all-accounts feed (`'*'`) on the newest-first list with
+`mergeLiveOrders`, like the account's orders tab.
+
 ### Layout
 
 Tables are `mat-table`s inside `.app-table-card` (`styles/_tables.scss`). Each row

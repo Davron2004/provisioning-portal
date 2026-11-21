@@ -1,0 +1,149 @@
+<section class="summary" aria-labelledby="review-summary-heading">
+  <h2 id="review-summary-heading" class="app-visually-hidden">Summary</h2>
+  <ul class="counts">
+    @for (item of summary(); track item.action) {
+      <li>
+        <app-action-badge
+          class="count app-numeric"
+          [class.zero]="item.count === 0"
+          [action]="item.action"
+          [label]="item.label"
+        />
+      </li>
+    }
+  </ul>
+  <p class="verdict" [class.blocked]="!preview().valid" role="status">
+    <mat-icon [svgIcon]="preview().valid ? 'check_circle' : 'error'" aria-hidden="true" />
+    {{ verdict() }}
+  </p>
+</section>
+
+@if (orderIssues().length > 0) {
+  <app-issue-list
+    class="order-issues"
+    label="Problems with the whole order"
+    [issues]="orderIssues()"
+  />
+}
+
+@if (handset()) {
+  <ol class="app-card-list cards" aria-label="Order lines">
+    @for (row of rows(); track row.index) {
+      <li class="app-card card" [attr.data-action]="row.action" [attr.data-severity]="row.severity">
+        <div class="card-top">
+          <app-action-badge [action]="row.action" />
+          <span class="line-no app-numeric">Line {{ row.index + 1 }}</span>
+        </div>
+        <p class="who">
+          <span class="name" [class.struck]="row.action === 'remove_user'">{{ row.name }}</span>
+          <span class="email">{{ row.email }}</span>
+        </p>
+        <dl class="app-card-facts">
+          @for (field of fields; track field) {
+            <div>
+              <dt>{{ fieldLabels[field] }}</dt>
+              <dd><app-diff-value [cell]="row.cells[field]" [action]="row.action" /></dd>
+            </div>
+          }
+        </dl>
+        @if (row.issues.length > 0) {
+          <app-issue-list [issues]="row.issues" [label]="'Problems on line ' + (row.index + 1)" />
+        }
+      </li>
+    }
+  </ol>
+} @else {
+  <div class="app-table-card">
+    <div class="app-table-scroll">
+      <table class="diff">
+        <caption class="app-visually-hidden">
+          What this order adds, changes and removes
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="num"><span class="app-visually-hidden">Line</span>#</th>
+            <th scope="col">Change</th>
+            <th scope="col">User</th>
+            @for (field of fields; track field) {
+              <th scope="col">{{ fieldLabels[field] }}</th>
+            }
+          </tr>
+        </thead>
+        @for (row of rows(); track row.index) {
+          <tbody [attr.data-action]="row.action" [attr.data-severity]="row.severity">
+            <tr>
+              <td class="num app-numeric">{{ row.index + 1 }}</td>
+              <td>
+                <app-action-badge [action]="row.action" />
+              </td>
+              <th scope="row" class="who">
+                <span class="name" [class.struck]="row.action === 'remove_user'">{{
+                  row.name
+                }}</span>
+                <span class="email">{{ row.email }}</span>
+              </th>
+              @for (field of fields; track field) {
+                <td [class.app-numeric]="field === 'extension' || field === 'did'">
+                  <app-diff-value [cell]="row.cells[field]" [action]="row.action" />
+                </td>
+              }
+            </tr>
+            @if (row.issues.length > 0) {
+              <tr class="issues-row">
+                <td></td>
+                <td [attr.colspan]="fields.length + 2">
+                  <app-issue-list
+                    [issues]="row.issues"
+                    [label]="'Problems on line ' + (row.index + 1)"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        }
+      </table>
+    </div>
+  </div>
+}
+
+@if (hasAuto()) {
+  <p class="legend">
+    <span class="auto-sample" aria-hidden="true">Auto</span>
+    Extensions and numbers nobody chose are assigned automatically: the next free one at the site.
+  </p>
+}
+
+@if (submitProblem(); as problem) {
+  <p class="submit-error" role="alert">
+    <mat-icon svgIcon="error" aria-hidden="true" />
+    {{ problem }}
+  </p>
+}
+
+<div class="footer">
+  <button matButton="outlined" type="button" (click)="back.emit()" [disabled]="submitting()">
+    <mat-icon svgIcon="arrow_back" />
+    {{ backLabel() }}
+  </button>
+  <ng-content select="[review-note]" />
+  <span class="spacer"></span>
+  @if (!preview().valid) {
+    <p id="review-blocked-hint" class="hint">Fix the errors to submit.</p>
+  }
+  <button
+    matButton="filled"
+    type="button"
+    class="submit"
+    [disabled]="!canSubmit()"
+    [attr.aria-describedby]="preview().valid ? null : 'review-blocked-hint'"
+    [attr.aria-busy]="submitting() || null"
+    (click)="submitOrder.emit()"
+  >
+    @if (submitting()) {
+      <mat-spinner diameter="18" aria-hidden="true" />
+    } @else {
+      <mat-icon svgIcon="send" />
+    }
+    {{ submitting() ? 'Submitting' : submitLabel() }}
+  </button>
+</div>
