@@ -757,6 +757,15 @@ missing. Tests synthesize against a small fixture build instead.
   only via SSM for that parameter's encryption context.
 - `rules`: no permissions.
 
+### Demo data
+
+In every stage except `prod` (context `seedDemoData`), a custom resource runs
+`seed-demo-data.ts` once when the stack is created: if the table has no
+accounts, it writes the same deterministic dataset the local harness seeds.
+Updates and deletes do nothing. The writes reach OpenSearch through the
+table stream like any other change, so search works without a separate
+backfill.
+
 ### Removal policies and tags
 
 `stage=prod` retains the table (also with deletion protection), user pool,
@@ -776,6 +785,24 @@ each of the eight Lambdas, failed workflow executions, messages in either DLQ,
 5 or more API 5xx responses, search cluster red, and less than 2 GiB of free
 search storage. Fourteen alarms cost about $1.40 a month.
 
+### CI/CD
+
+`ci.yml` runs on every pull request and push to `main`: lint, typecheck, unit
+tests (infra included), build, the API integration tests against DynamoDB
+Local and OpenSearch containers, and `cdk synth` after building the web app.
+
+`deploy.yml` runs when CI succeeds on a push to `main` (`workflow_run`), or by
+hand. It checks out the exact commit CI tested, builds the web app, assumes
+the deploy role through GitHub OIDC, runs `cdk deploy ProvisioningPortal-dev`,
+and finishes with `infra/scripts/smoke-test.sh`. The job runs in the `aws-dev`
+GitHub environment, which only accepts `main`; the role's trust policy
+requires exactly `repo:Davron2004/provisioning-portal:environment:aws-dev`
+and the `sts.amazonaws.com` audience. The role itself can only assume the CDK
+bootstrap roles, so it has no direct access to resources. Deploys never run
+concurrently, and while `AWS_DEPLOY_ROLE_ARN` is unset the job is skipped.
+The OIDC provider and role are the separate `ProvisioningPortal-GithubOidc`
+stack, deployed once by hand (`docs/deployment.md`).
+
 ### Tests
 
 `infra/test` (Vitest + `aws-cdk-lib/assertions`) synthesizes the stack for a
@@ -788,8 +815,9 @@ OpenSearch size, encryption and resource-policy principals; the state
 machine's retry policy and concurrency against the exported constants; stream
 filters and DLQs; Cognito authorizer on every method except `OPTIONS`; the 401
 body; WebSocket routes and authorizer; Cognito settings; OAC, SPA fallback,
-headers and CSP; caching; budget and alarms; retention in prod. CI runs them
-with the other unit tests and runs `cdk synth` after building the web app.
+headers and CSP; caching; budget and alarms; retention in prod; the OIDC
+role's trust (exact `sub` and `aud`, no wildcards) and permissions. CI runs
+them with the other unit tests.
 
 ## Front-end
 
