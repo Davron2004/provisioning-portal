@@ -8,6 +8,7 @@
     "dev": "tsx watch src/local/server.ts",
     "start:local": "tsx src/local/server.ts",
     "seed": "tsx src/local/seed-cli.ts",
+    "reindex": "tsx src/local/reindex-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
