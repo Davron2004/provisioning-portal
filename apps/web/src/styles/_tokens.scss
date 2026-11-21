@@ -1,0 +1,73 @@
+// Design tokens
+// =============
+//
+// The app is themed with Angular Material's system tokens (`--mat-sys-*`, see _theme.scss).
+// Use those for surfaces, text and outlines:
+//
+//   --mat-sys-surface, --mat-sys-surface-container-{lowest,low,,high,highest}
+//   --mat-sys-on-surface, --mat-sys-on-surface-variant, --mat-sys-outline-variant
+//   --mat-sys-primary, --mat-sys-on-primary, --mat-sys-secondary-container, ...
+//   --mat-sys-{display,headline,title,body,label}-{large,medium,small} (font shorthands)
+//
+// This file adds the few things Material does not have:
+//
+//   Spacing   --app-space-{1..10}       4px grid: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64
+//   Radius    --app-radius-{sm,md,lg,xl,full}
+//   Layout    --app-toolbar-height, --app-content-max-width
+//   Status    --app-status-{tone}-{fg,bg,accent}
+//             tone: success (active, done), info (in progress), warning (attention),
+//             error (failed), neutral (idle, pending). `fg` on `bg` meets WCAG AA for
+//             small text in both themes; `accent` is for dots and icons on surfaces.
+//   Motion    --app-ease-standard, --app-duration-{short,medium}
+//
+// Every color is written with light-dark(), so the active `color-scheme` on <html>
+// (light, dark, or the OS preference) picks the right value with no extra classes.
+//
+// Numbers: add the `.app-numeric` class (tabular figures) wherever digits line up
+// in columns or update live: extensions, phone numbers, counts, timestamps.
+
+:root {
+  --app-space-1: 4px;
+  --app-space-2: 8px;
+  --app-space-3: 12px;
+  --app-space-4: 16px;
+  --app-space-5: 20px;
+  --app-space-6: 24px;
+  --app-space-7: 32px;
+  --app-space-8: 40px;
+  --app-space-9: 48px;
+  --app-space-10: 64px;
+
+  --app-radius-sm: 6px;
+  --app-radius-md: 8px;
+  --app-radius-lg: 12px;
+  --app-radius-xl: 16px;
+  --app-radius-full: 9999px;
+
+  --app-toolbar-height: 64px;
+  --app-content-max-width: 1440px;
+
+  --app-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --app-duration-short: 150ms;
+  --app-duration-medium: 250ms;
+
+  --app-status-success-fg: light-dark(#17613a, #8fdcaa);
+  --app-status-success-bg: light-dark(#dbf2e2, #173a27);
+  --app-status-success-accent: light-dark(#2a9d5c, #52c784);
+
+  --app-status-info-fg: light-dark(#1b4f99, #a9c8fb);
+  --app-status-info-bg: light-dark(#dfe9fb, #1c3157);
+  --app-status-info-accent: light-dark(#2f6fd4, #6fa0f0);
+
+  --app-status-warning-fg: light-dark(#734800, #f4cf80);
+  --app-status-warning-bg: light-dark(#fcecc9, #3e2e0a);
+  --app-status-warning-accent: light-dark(#ae7300, #f0b43f);
+
+  --app-status-error-fg: light-dark(#a01b1e, #ffb4ad);
+  --app-status-error-bg: light-dark(#fde2df, #4b1b1a);
+  --app-status-error-accent: light-dark(#d23a31, #ff7a70);
+
+  --app-status-neutral-fg: light-dark(#41474d, #c3c9cf);
+  --app-status-neutral-bg: light-dark(#e7eaee, #2b3136);
+  --app-status-neutral-accent: light-dark(#7b838a, #8f979e);
+}

@@ -1,0 +1,86 @@
+<div class="corner">
+  <app-theme-toggle />
+</div>
+
+<main class="layout">
+  <section class="card" aria-labelledby="login-title">
+    <header class="intro">
+      <app-brand-mark size="40px" />
+      <h1 id="login-title" class="title">Sign in</h1>
+      <p class="subtitle">to Provisioning Portal</p>
+    </header>
+
+    @if (error(); as message) {
+      <div #errorBanner class="error" role="alert" tabindex="-1">
+        <mat-icon svgIcon="error" aria-hidden="true" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <mat-form-field subscriptSizing="fixed">
+        <mat-label>Email</mat-label>
+        <input
+          matInput
+          type="email"
+          formControlName="email"
+          name="email"
+          autocomplete="username"
+          inputmode="email"
+          spellcheck="false"
+        />
+        @if (form.controls.email.hasError('required')) {
+          <mat-error>Enter your email address.</mat-error>
+        } @else if (form.controls.email.hasError('email')) {
+          <mat-error>Enter a valid email address, like name&#64;example.com.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field subscriptSizing="fixed">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          [type]="passwordVisible() ? 'text' : 'password'"
+          formControlName="password"
+          name="password"
+          autocomplete="current-password"
+        />
+        <button
+          matIconSuffix
+          matIconButton
+          type="button"
+          [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+          [attr.aria-pressed]="passwordVisible()"
+          [disabled]="submitting()"
+          (click)="passwordVisible.set(!passwordVisible())"
+        >
+          <mat-icon [svgIcon]="passwordVisible() ? 'visibility_off' : 'visibility'" />
+        </button>
+        @if (form.controls.password.hasError('required')) {
+          <mat-error>Enter your password.</mat-error>
+        }
+      </mat-form-field>
+
+      <button matButton="filled" class="submit" type="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <mat-spinner diameter="18" aria-hidden="true" />
+          Signing in…
+        } @else {
+          Sign in
+        }
+      </button>
+    </form>
+
+    @if (isLocal) {
+      <aside class="demo" aria-label="Demo account">
+        <mat-icon svgIcon="info" aria-hidden="true" />
+        <dl class="demo-text">
+          <dt class="demo-title">Local demo account</dt>
+          <dd>{{ demo.email }}</dd>
+          <dd>Password: {{ demo.password }}</dd>
+        </dl>
+        <button matButton type="button" class="demo-use" (click)="useDemoAccount()">Fill in</button>
+      </aside>
+    }
+  </section>
+</main>

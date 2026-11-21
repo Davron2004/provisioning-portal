@@ -1,0 +1,42 @@
+ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+li {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--app-radius-sm);
+
+  &:hover {
+    color: var(--mat-sys-on-surface);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+[aria-current='page'] {
+  color: var(--mat-sys-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.separator {
+  width: 18px;
+  height: 18px;
+  margin: 0 2px;
+  color: var(--mat-sys-outline);
+}

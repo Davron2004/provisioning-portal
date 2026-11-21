@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-space-2);
+  padding: var(--app-space-9) var(--app-space-6);
+  text-align: center;
+  border-radius: var(--app-radius-xl);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--app-space-2);
+  border-radius: var(--app-radius-full);
+  background: var(--app-status-error-bg);
+  color: var(--app-status-error-fg);
+
+  mat-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.heading {
+  font: var(--mat-sys-title-medium);
+  font-weight: 600;
+}
+
+.message {
+  max-width: 48ch;
+  margin-bottom: var(--app-space-3);
+  color: var(--mat-sys-on-surface-variant);
+  text-wrap: pretty;
+}
