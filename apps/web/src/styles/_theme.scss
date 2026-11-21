@@ -1,0 +1,80 @@
+@use '@angular/material' as mat;
+@use './palettes';
+
+// One theme for both schemes: `theme-type: color-scheme` makes Material emit every
+// system color as light-dark(), so switching is just a matter of `color-scheme`.
+html {
+  color-scheme: light dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: palettes.$primary-palette,
+        tertiary: palettes.$tertiary-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        plain-family: (
+          'Inter Variable',
+          system-ui,
+          sans-serif,
+        ),
+        brand-family: (
+          'Inter Variable',
+          system-ui,
+          sans-serif,
+        ),
+        bold-weight: 600,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+
+  // Calmer than Material's defaults for a dense operations console.
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: var(--mat-sys-surface),
+      container-text-color: var(--mat-sys-on-surface),
+      standard-height: var(--app-toolbar-height),
+      mobile-height: 56px,
+    )
+  );
+  @include mat.sidenav-overrides(
+    (
+      container-background-color: var(--mat-sys-surface-container-low),
+      container-shape: 0,
+      container-divider-color: var(--mat-sys-outline-variant),
+      content-background-color: var(--mat-sys-surface),
+    )
+  );
+  @include mat.tooltip-overrides(
+    (
+      container-color: var(--mat-sys-inverse-surface),
+      supporting-text-color: var(--mat-sys-inverse-on-surface),
+    )
+  );
+  @include mat.menu-overrides(
+    (
+      container-shape: var(--app-radius-md),
+    )
+  );
+  @include mat.button-overrides(
+    (
+      filled-container-shape: var(--app-radius-md),
+      outlined-container-shape: var(--app-radius-md),
+      text-container-shape: var(--app-radius-md),
+      protected-container-shape: var(--app-radius-md),
+      tonal-container-shape: var(--app-radius-md),
+    )
+  );
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
