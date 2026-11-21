@@ -1,0 +1,62 @@
+.trigger {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--app-radius-full);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover .avatar {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent);
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--app-radius-full);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font: var(--mat-sys-label-large);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: box-shadow var(--app-duration-short) var(--app-ease-standard);
+}
+
+.avatar--large {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-3);
+  min-width: 240px;
+  padding: var(--app-space-2) var(--app-space-4) var(--app-space-3);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.email {
+  overflow: hidden;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

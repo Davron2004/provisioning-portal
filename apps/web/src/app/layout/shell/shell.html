@@ -1,0 +1,61 @@
+<a class="skip-link" href="#main-content" (click)="skipToMain($event)">Skip to main content</a>
+
+<header class="header">
+  <mat-toolbar class="toolbar">
+    <button
+      matIconButton
+      type="button"
+      class="nav-toggle"
+      aria-controls="app-navigation"
+      [attr.aria-expanded]="navExpanded()"
+      [attr.aria-label]="navExpanded() ? 'Collapse navigation' : 'Expand navigation'"
+      (click)="toggleNav()"
+    >
+      <mat-icon
+        [svgIcon]="compact() ? 'menu' : railCollapsed() ? 'left_panel_open' : 'left_panel_close'"
+      />
+    </button>
+
+    <a class="brand" routerLink="/overview" aria-label="Provisioning Portal, overview">
+      <app-brand-mark size="28px" />
+      <span class="brand-name">Provisioning Portal</span>
+    </a>
+
+    @if (!compact()) {
+      <app-global-search class="search" />
+    }
+
+    <span class="spacer"></span>
+
+    <div class="actions">
+      <app-connection-status [compact]="compact()" />
+      @if (compact()) {
+        <a matIconButton routerLink="/search" aria-label="Search" matTooltip="Search">
+          <mat-icon svgIcon="search" />
+        </a>
+      }
+      <app-theme-toggle />
+      <app-user-menu />
+    </div>
+  </mat-toolbar>
+</header>
+
+<mat-sidenav-container class="container" autosize>
+  <mat-sidenav
+    id="app-navigation"
+    class="sidenav"
+    [class.rail]="!compact() && railCollapsed()"
+    [mode]="compact() ? 'over' : 'side'"
+    [opened]="compact() ? drawerOpen() : true"
+    [disableClose]="!compact()"
+    (closedStart)="drawerOpen.set(false)"
+  >
+    <app-side-nav [collapsed]="!compact() && railCollapsed()" />
+  </mat-sidenav>
+
+  <mat-sidenav-content #content class="content">
+    <main #main id="main-content" class="main" tabindex="-1">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

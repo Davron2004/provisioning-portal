@@ -1,0 +1,81 @@
+:host {
+  --_dot: var(--app-status-neutral-accent);
+
+  display: inline-flex;
+}
+
+:host([data-state='live']) {
+  --_dot: var(--app-status-success-accent);
+}
+
+:host([data-state='reconnecting']) {
+  --_dot: var(--app-status-warning-accent);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  height: 28px;
+  padding: 0 var(--app-space-3) 0 10px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-full);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-medium);
+  cursor: default;
+  white-space: nowrap;
+}
+
+.dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--app-radius-full);
+  background: var(--_dot);
+}
+
+:host([data-state='live']) .dot::after,
+:host([data-state='reconnecting']) .dot::after,
+:host([data-state='connecting']) .dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--_dot);
+  animation: pulse 2s var(--app-ease-standard) infinite;
+}
+
+:host([data-state='reconnecting']) .dot::after,
+:host([data-state='connecting']) .dot::after {
+  animation-duration: 1s;
+}
+
+:host(.compact) {
+  .pill {
+    padding: 0;
+    width: 28px;
+    justify-content: center;
+    border-color: transparent;
+  }
+
+  .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}

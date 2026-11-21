@@ -1,0 +1,131 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--app-space-2);
+  left: var(--app-space-2);
+  z-index: 1000;
+  padding: var(--app-space-2) var(--app-space-4);
+  border-radius: var(--app-radius-md);
+  background: var(--mat-sys-inverse-surface);
+  color: var(--mat-sys-inverse-on-surface);
+  font: var(--mat-sys-label-large);
+  text-decoration: none;
+  transform: translateY(calc(-100% - var(--app-space-4)));
+
+  &:focus {
+    transform: none;
+  }
+}
+
+.header {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.toolbar {
+  gap: var(--app-space-2);
+  padding: 0 var(--app-space-3) 0 var(--app-space-3);
+}
+
+.nav-toggle {
+  flex: none;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-3);
+  margin-right: var(--app-space-4);
+  padding: var(--app-space-1) var(--app-space-2) var(--app-space-1) var(--app-space-1);
+  border-radius: var(--app-radius-md);
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-name {
+  font: var(--mat-sys-title-medium);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.search {
+  flex: 0 1 520px;
+  min-width: 200px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-1);
+
+  app-connection-status {
+    margin-right: var(--app-space-2);
+  }
+}
+
+.container {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sidenav {
+  width: 248px;
+
+  &.rail {
+    width: 76px;
+  }
+}
+
+.main {
+  max-width: var(--app-content-max-width);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: var(--app-space-7) var(--app-space-8) var(--app-space-9);
+}
+
+@media (max-width: 959.98px) {
+  .toolbar {
+    padding: 0 var(--app-space-2);
+  }
+
+  .brand {
+    margin-right: 0;
+  }
+
+  .brand-name {
+    font-size: 16px;
+  }
+
+  .actions app-connection-status {
+    margin-right: 0;
+  }
+
+  .sidenav {
+    width: min(300px, 85vw);
+    border-right: 0;
+    box-shadow: var(--mat-sys-level3);
+  }
+
+  .main {
+    padding: var(--app-space-5) var(--app-space-4) var(--app-space-8);
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-name {
+    display: none;
+  }
+}

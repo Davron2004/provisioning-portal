@@ -1,0 +1,79 @@
+:host {
+  display: block;
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border-radius: var(--app-radius-full);
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  transition:
+    background-color var(--app-duration-short) var(--app-ease-standard),
+    box-shadow var(--app-duration-short) var(--app-ease-standard);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+  }
+
+  &:focus-within {
+    background: var(--mat-sys-surface);
+    box-shadow: inset 0 0 0 2px var(--mat-sys-primary);
+
+    .hint {
+      opacity: 0;
+    }
+  }
+}
+
+.leading {
+  position: absolute;
+  left: 12px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 44px 0 42px;
+  border: 0;
+  background: transparent;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-large);
+  font-size: 15px;
+  outline: none;
+
+  &::placeholder {
+    color: var(--mat-sys-on-surface-variant);
+    opacity: 1;
+  }
+
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+}
+
+.hint {
+  position: absolute;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-sm);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+  pointer-events: none;
+  transition: opacity var(--app-duration-short) var(--app-ease-standard);
+}
+
+input:not(:placeholder-shown) ~ .hint {
+  opacity: 0;
+}
