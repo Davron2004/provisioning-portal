@@ -60,6 +60,11 @@ export type SearchHit = z.infer<typeof SearchHit>;
 export const SearchResponse = z.object({
   query: z.string(),
   total: z.number().int().nonnegative(),
+  /**
+   * Matches of each entity for this query and account, whatever the `entity` filter:
+   * the counts on the filter chips, exact even when `hits` is cut to `limit`.
+   */
+  totals: z.record(SearchEntity, z.number().int().nonnegative()),
   hits: z.array(SearchHit),
   tookMs: z.number().nonnegative(),
 });

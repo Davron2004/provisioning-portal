@@ -34,15 +34,15 @@
     >
       <mat-chip-option value="">
         All
-        @if (s.all) {
-          <span class="count app-numeric">{{ s.all.hits.length }}</span>
+        @if (allCount() !== undefined) {
+          <span class="count app-numeric">{{ allCount() }}</span>
         }
       </mat-chip-option>
       @for (entity of entities; track entity) {
         <mat-chip-option [value]="entity">
           {{ groups[entity].label }}
-          @if (s.all) {
-            <span class="count app-numeric">{{ counts()[entity] }}</span>
+          @if (counts(); as counts) {
+            <span class="count app-numeric">{{ counts[entity] }}</span>
           }
         </mat-chip-option>
       }
