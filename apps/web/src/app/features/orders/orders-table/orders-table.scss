@@ -1,20 +1,33 @@
-.filters {
-  justify-content: space-between;
-}
-
+// Text columns share what is left after the fixed-content ones (status, lines,
+// source, updated); `max-width: 0` lets their text truncate instead of widening the table.
 .mat-column-title {
-  width: 28%;
-  max-width: 0;
-}
-
-.mat-column-account {
-  width: 19%;
+  width: 40%;
   max-width: 0;
 }
 
 .mat-column-submittedBy {
-  width: 15%;
+  width: 20%;
   max-width: 0;
+}
+
+.with-account {
+  .mat-column-title {
+    width: 30%;
+  }
+
+  .mat-column-account {
+    width: 18%;
+    max-width: 0;
+  }
+
+  .mat-column-submittedBy {
+    width: 16%;
+  }
+}
+
+.mat-column-source,
+.mat-column-updated {
+  white-space: nowrap;
 }
 
 .progress {

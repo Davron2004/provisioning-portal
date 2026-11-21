@@ -21,10 +21,7 @@ describe('OrdersTab', () => {
       'Add 3 users at Ottawa HQ',
     ]);
     expect(textsOf(page.host(), 'td.mat-column-status')).toEqual(['Provisioning', 'Failed']);
-    expect(textsOf(page.host(), 'td.mat-column-progress')).toEqual([
-      '0 of 2 done',
-      '1 of 3 failed',
-    ]);
+    expect(textsOf(page.host(), 'td.mat-column-progress')).toEqual(['0/2', '3/3, 1 failed']);
     expect(page.host().querySelector('td.mat-column-title a')?.getAttribute('href')).toBe(
       '/accounts/acc_northwind/orders/ord_0001',
     );

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
@@ -16,7 +15,7 @@ import { EmptyState } from '../../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../../shared/ui/error-state/error-state';
 import { LoadMore } from '../../../../shared/ui/load-more/load-more';
 import { RelativeTime } from '../../../../shared/ui/relative-time/relative-time';
-import { statusStyle } from '../../../../shared/ui/status-chip/status';
+import { StatusFilter } from '../../../../shared/ui/status-filter/status-filter';
 import { StatusChip } from '../../../../shared/ui/status-chip/status-chip';
 import { TableSkeleton } from '../../../../shared/ui/table-skeleton/table-skeleton';
 import { AccountStore } from '../account-store';
@@ -30,7 +29,6 @@ const STATUSES = NumberStatus.options;
     ErrorState,
     LoadMore,
     MatButtonModule,
-    MatButtonToggleModule,
     MatFormFieldModule,
     MatSelectModule,
     MatTableModule,
@@ -38,6 +36,7 @@ const STATUSES = NumberStatus.options;
     RelativeTime,
     RouterLink,
     StatusChip,
+    StatusFilter,
     TableSkeleton,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,10 +55,7 @@ export class NumbersTab {
 
   protected readonly siteId = computed(() => this.site() || null);
   protected readonly statusFilter = computed(() => oneOf(STATUSES, this.status()));
-  protected readonly statusOptions = STATUSES.map((value) => ({
-    value,
-    label: statusStyle(value).label,
-  }));
+  protected readonly statuses = STATUSES;
 
   protected readonly numbers = pagedList(
     () => {
