@@ -67,12 +67,13 @@ app-page-header {
   align-items: flex-start;
   gap: var(--app-space-3);
   padding: var(--app-space-3) var(--app-space-4);
-  border-radius: var(--app-radius-lg);
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
+  border-left: 3px solid var(--mat-sys-tertiary);
+  border-radius: var(--app-radius-md);
+  background: var(--mat-sys-surface-container-low);
 
   mat-icon {
     flex: none;
+    color: var(--mat-sys-tertiary);
   }
 }
 
