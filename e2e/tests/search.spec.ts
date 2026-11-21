@@ -4,7 +4,7 @@ import { bodyRows } from '../support/tables';
 // From the deterministic demo seed (services/api/src/local/seed); no test changes this account.
 const CONNOR = {
   name: 'Connor Beaulieu',
-  number: '+1 753-555-0105',
+  number: '(753) 555-0105',
   account: 'Mer Bleue Health Clinics',
 };
 
