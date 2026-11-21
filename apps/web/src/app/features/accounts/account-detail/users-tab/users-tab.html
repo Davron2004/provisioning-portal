@@ -1,0 +1,167 @@
+<div class="app-filter-bar" role="search" aria-label="Filter users">
+  <mat-form-field class="app-filter-search">
+    <mat-icon matPrefix svgIcon="search" />
+    <mat-label>Filter by name, email or number</mat-label>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      [value]="search.text()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>Site</mat-label>
+    <mat-select [value]="siteId()" (selectionChange)="setSite($event.value)">
+      <mat-option [value]="null">All sites</mat-option>
+      @for (site of store.sites() ?? []; track site.id) {
+        <mat-option [value]="site.id">{{ site.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  @if (filtered()) {
+    <button matButton type="button" (click)="clearFilters()">Clear filters</button>
+  }
+  <p class="app-result-count app-numeric" aria-live="polite">
+    @if (!users.isFirstLoad() && !users.error()) {
+      {{ resultCount() }}
+    }
+  </p>
+</div>
+
+@if (users.error(); as error) {
+  <app-error-state heading="Could not load users" [error]="error" (retry)="users.retry()" />
+} @else if (users.isFirstLoad()) {
+  <app-table-skeleton
+    class="app-table-card"
+    label="Loading users"
+    [columns]="[3, 1.4, 0.8, 1.4, 0.8, 1.4, 1.2]"
+  />
+} @else if (users.items().length === 0 && !searching()) {
+  <app-empty-state
+    icon="group"
+    [heading]="siteId() ? 'No users at this site' : 'No users yet'"
+    message="Users are added through orders. Start one with New order."
+  />
+} @else if (rows().length === 0) {
+  <app-empty-state
+    icon="search"
+    heading="No users match"
+    message="Check the spelling, or search by extension or phone number."
+  >
+    <button matButton="outlined" type="button" (click)="clearFilters()">Clear filters</button>
+  </app-empty-state>
+} @else if (handset()) {
+  <ul class="app-card-list" aria-label="Users">
+    @for (user of rows(); track user.id) {
+      <li class="app-card">
+        <div class="app-card-top">
+          <div>
+            <span class="app-card-title">{{ fullName(user) }}</span>
+            <span class="app-cell-secondary">{{ user.email }}</span>
+          </div>
+          <app-status-chip [status]="user.status" />
+        </div>
+        <dl class="app-card-facts">
+          <div>
+            <dt>Ext</dt>
+            <dd class="app-numeric">{{ user.extension }}</dd>
+          </div>
+          <div>
+            <dt>DID</dt>
+            <dd class="app-numeric">{{ (user.did | phoneNumber) || 'None' }}</dd>
+          </div>
+          <div>
+            <dt>Device</dt>
+            <dd>{{ deviceName()(user) ?? 'None' }}</dd>
+          </div>
+          <div>
+            <dt>Voicemail</dt>
+            <dd>{{ user.voicemail ? 'On' : 'Off' }}</dd>
+          </div>
+        </dl>
+      </li>
+    }
+  </ul>
+} @else {
+  <div class="app-table-card">
+    <div class="app-table-scroll">
+      <table
+        mat-table
+        class="app-table"
+        aria-label="Users"
+        [dataSource]="rows()"
+        [trackBy]="trackById"
+      >
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>User</th>
+          <td mat-cell *matCellDef="let user" class="app-cell-stack">
+            <span class="user-name app-truncate">{{ fullName(user) }}</span>
+            <span class="app-cell-secondary app-truncate" [title]="user.email">{{
+              user.email
+            }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="site">
+          <th mat-header-cell *matHeaderCellDef>Site</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="app-truncate">{{ store.siteNames().get(user.siteId) ?? '' }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="extension">
+          <th mat-header-cell *matHeaderCellDef>Ext</th>
+          <td mat-cell *matCellDef="let user" class="app-numeric">{{ user.extension }}</td>
+        </ng-container>
+        <ng-container matColumnDef="did">
+          <th mat-header-cell *matHeaderCellDef>DID</th>
+          <td mat-cell *matCellDef="let user" class="app-numeric nowrap">
+            @if (user.did) {
+              {{ user.did | phoneNumber }}
+            } @else {
+              <span class="app-muted">None</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="voicemail">
+          <th mat-header-cell *matHeaderCellDef>Voicemail</th>
+          <td mat-cell *matCellDef="let user">
+            @if (user.voicemail) {
+              <span class="flag"><mat-icon svgIcon="voicemail" aria-hidden="true" />On</span>
+            } @else {
+              <span class="app-muted">Off</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="device">
+          <th mat-header-cell *matHeaderCellDef>Device</th>
+          <td mat-cell *matCellDef="let user">
+            @if (deviceName()(user); as device) {
+              <span class="app-truncate" [title]="device">{{ device }}</span>
+            } @else {
+              <span class="app-muted">None</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let user"><app-status-chip [status]="user.status" /></td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+        <tr mat-row *matRowDef="let user; columns: columns()"></tr>
+      </table>
+    </div>
+  </div>
+}
+
+@if (users.hasMore() || users.loadMoreError()) {
+  <app-load-more
+    noun="users"
+    [shown]="users.items().length"
+    [hasMore]="users.hasMore()"
+    [loading]="users.isLoadingMore()"
+    [error]="users.loadMoreError()"
+    (loadMore)="users.loadMore()"
+    (retry)="users.retry()"
+  />
+}

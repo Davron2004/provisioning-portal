@@ -157,6 +157,15 @@ Notes on the choices:
 - **Account orders by status use a filter, not a third GSI.** One account has a
   bounded number of orders; the repository repeats the query (at most five
   round trips) until the page is full, so filtered pages are not short.
+- **The users text filter reads the partition in the service.** `q` matches
+  first, last and full name, email, extension and the DID's digits however typed
+  (case-insensitive, every term must match). That is not a DynamoDB
+  `FilterExpression`, and filter plus `Limit` gives short pages. An account's (or
+  site's) users are a bounded partition, so the repository reads the same GSI
+  query in chunks of 100, matches in memory and stops when the page is full. The
+  cursor is the key of the last user returned, so the next page resumes right
+  after it; a page is short only at the end of the list. A search attribute or
+  OpenSearch would replace this beyond a few thousand users per account.
 - **`ORDERS` is a single GSI1 partition.** Fine at this scale (orders are
   written a few times a minute). At high volume it would be sharded by day
   (`ORDERS#2026-11-21`) and merged when reading.
@@ -217,7 +226,7 @@ path, status and duration.
 | GET    | `/accounts?cursor=&limit=`                              |                      | `AccountPage`       |
 | GET    | `/accounts/{accountId}`                                 |                      | `Account`           |
 | GET    | `/accounts/{accountId}/sites`                           |                      | `SitePage`          |
-| GET    | `/accounts/{accountId}/users?siteId=&cursor=`           |                      | `VoiceUserPage`     |
+| GET    | `/accounts/{accountId}/users?siteId=&q=&cursor=&limit=` |                      | `VoiceUserPage`     |
 | GET    | `/accounts/{accountId}/numbers?siteId=&status=&cursor=` |                      | `PhoneNumberPage`   |
 | GET    | `/accounts/{accountId}/orders?status=&cursor=`          |                      | `OrderSummaryPage`  |
 | GET    | `/accounts/{accountId}/orders/{orderId}`                |                      | `Order`             |
@@ -784,7 +793,61 @@ with the other unit tests and runs `cdk synth` after building the web app.
 
 ## Front-end
 
-TODO (web lane).
+### Reading data
+
+Each API service in `apps/web/src/app/core/api` exposes reads as `httpResource`s
+validated against the contract schema, so a page only ever holds data that
+matches the types. List endpoints are cursor-paginated; `pagedList()`
+(`core/api/paged-list.ts`) turns one into a "load more" list: pages accumulate
+until the query changes, a page that loads again replaces itself (no
+duplicates), and a failed later page keeps what is already shown with a retry
+under it. Pages render four states from it: a skeleton with the final row
+height while the first page loads, the rows, an empty state, or an error state
+with a retry.
+
+### State in the URL
+
+Filters, sort and tabs live in the URL, so any view can be linked to and the
+back button behaves. Query parameters arrive as component inputs
+(`withComponentInputBinding`); `injectQueryParamsUpdater()` writes them back with
+`replaceUrl`. Search boxes write the URL once typing pauses (`injectSearchParam()`), so the box
+never fights the router; server-side filters (users) send the URL's value to the
+API, so one request goes out per pause.
+
+| Page                    | URL state                               |
+| ----------------------- | --------------------------------------- |
+| `/accounts`             | `q`, `status`, `plan`, `sort`, `dir`    |
+| `/accounts/:id/users`   | `site`, `q` (both sent to the API)      |
+| `/accounts/:id/sites`   | none                                    |
+| `/accounts/:id/numbers` | `site`, `status` (both sent to the API) |
+| `/accounts/:id/orders`  | `status` (sent to the API)              |
+
+The account tabs are child routes of `accounts/:accountId`. The page provides an
+`AccountStore` (the account and its sites, loaded once), which every tab
+injects. The users text filter runs on the server (see the design decisions above), so it searches
+every user, not just the loaded page; totals come from the counters on the
+account and site items.
+
+### Live updates
+
+`RealtimeService.orderUpdates(accountId | '*')` streams `order.updated` pushes.
+The overview applies a push to its recent orders and status counts at once
+(`applyOrderToOverview`), then reloads `/overview` once pushes pause, so the
+exact numbers come from the server. The account's orders tab overlays pushes
+on the loaded list (`mergeLiveOrders`): a newer push replaces an order in place,
+an order newer than everything listed goes on top, and anything older waits for
+its page. When an order for the open account finishes, the account and its
+sites reload, since their counters moved. Without a connection the streams are
+quiet and the pages show what they loaded.
+
+### Layout
+
+Tables are `mat-table`s inside `.app-table-card` (`styles/_tables.scss`). Each row
+has one real link (the account or order name) stretched over the row, so the
+whole row is clickable while keyboard and screen reader users get a single
+link per row and open-in-new-tab works. Below 600 px wide, lists render as
+cards instead of tables. Numbers use tabular figures and phone numbers are
+shown as `(613) 555-0142`.
 
 ## Trade-offs
 

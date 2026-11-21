@@ -89,6 +89,12 @@
   }
 }
 
+.content {
+  // Reserve the scrollbar's width on every page, so switching between a short page
+  // and a long one does not nudge the layout sideways.
+  scrollbar-gutter: stable;
+}
+
 .main {
   max-width: var(--app-content-max-width);
   min-height: 100%;

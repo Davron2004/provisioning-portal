@@ -1,0 +1,187 @@
+<app-page-header title="Accounts" subtitle="Customer accounts on the phone service." />
+
+@if (accounts.error(); as error) {
+  <app-error-state heading="Could not load accounts" [error]="error" (retry)="accounts.retry()" />
+} @else {
+  <div class="app-filter-bar" role="search" aria-label="Filter accounts">
+    <mat-form-field class="app-filter-search">
+      <mat-icon matPrefix svgIcon="search" />
+      <mat-label>Filter by name or contact</mat-label>
+      <input
+        matInput
+        type="search"
+        autocomplete="off"
+        [value]="search.text()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Status</mat-label>
+      <mat-select [value]="filter().status" (selectionChange)="setStatus($event.value)">
+        <mat-option [value]="null">All statuses</mat-option>
+        @for (option of statusOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Plan</mat-label>
+      <mat-select [value]="filter().plan" (selectionChange)="setPlan($event.value)">
+        <mat-option [value]="null">All plans</mat-option>
+        @for (option of planOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (filtered()) {
+      <button matButton type="button" (click)="clearFilters()">Clear filters</button>
+    }
+    <p class="app-result-count app-numeric" aria-live="polite">
+      @if (!accounts.isFirstLoad()) {
+        {{ resultCount() }}
+      }
+    </p>
+  </div>
+
+  @if (accounts.isFirstLoad()) {
+    <app-table-skeleton
+      class="app-table-card"
+      label="Loading accounts"
+      [columns]="[4, 1.4, 1.4, 1, 1, 2]"
+    />
+  } @else if (accounts.items().length === 0) {
+    <app-empty-state
+      icon="domain"
+      heading="No accounts yet"
+      message="Customer accounts appear here once they are onboarded."
+    />
+  } @else if (rows().length === 0) {
+    <app-empty-state
+      icon="search"
+      heading="No accounts match these filters"
+      message="Try a different name, or clear the filters to see every account."
+    >
+      <button matButton="outlined" type="button" (click)="clearFilters()">Clear filters</button>
+    </app-empty-state>
+  } @else if (handset()) {
+    <ul class="app-card-list" aria-label="Accounts">
+      @for (account of rows(); track account.id) {
+        <li class="app-card">
+          <div class="app-card-top">
+            <a class="app-row-link app-card-title" [routerLink]="['/accounts', account.id]">{{
+              account.name
+            }}</a>
+            <app-status-chip [status]="account.status" />
+          </div>
+          <p class="card-meta">
+            <app-plan-badge [plan]="account.plan" />
+            <span class="app-numeric"
+              >{{ countOf(account.siteCount, 'site') }} ·
+              {{ countOf(account.userCount, 'user') }}</span
+            >
+          </p>
+          <app-utilization-meter
+            compact
+            unit="numbers in use"
+            [used]="account.numbersAssigned"
+            [total]="account.numbersTotal"
+            label="Numbers in use"
+          />
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="app-table-card">
+      <div class="app-table-scroll">
+        <table
+          mat-table
+          class="app-table"
+          aria-label="Accounts"
+          [dataSource]="rows()"
+          [trackBy]="trackById"
+          matSort
+          matSortDisableClear
+          [matSortActive]="sortKey()"
+          [matSortDirection]="sortDirection()"
+          (matSortChange)="setSort($event)"
+        >
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Account</th>
+            <td mat-cell *matCellDef="let account" class="app-cell-stack">
+              <a class="app-row-link app-truncate" [routerLink]="['/accounts', account.id]">{{
+                account.name
+              }}</a>
+              <span class="app-cell-secondary app-truncate">{{ account.primaryContact.name }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="plan">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Plan</th>
+            <td mat-cell *matCellDef="let account"><app-plan-badge [plan]="account.plan" /></td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let account">
+              <app-status-chip [status]="account.status" />
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="sites">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              arrowPosition="before"
+              start="desc"
+              class="app-align-end"
+            >
+              Sites
+            </th>
+            <td mat-cell *matCellDef="let account" class="app-align-end app-numeric">
+              {{ account.siteCount }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="users">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              arrowPosition="before"
+              start="desc"
+              class="app-align-end"
+            >
+              Users
+            </th>
+            <td mat-cell *matCellDef="let account" class="app-align-end app-numeric">
+              {{ account.userCount }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="numbers">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header start="desc">Numbers in use</th>
+            <td mat-cell *matCellDef="let account">
+              <app-utilization-meter
+                compact
+                [used]="account.numbersAssigned"
+                [total]="account.numbersTotal"
+                [label]="'Numbers in use at ' + account.name"
+              />
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let account; columns: columns"></tr>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (accounts.hasMore() || accounts.loadMoreError()) {
+    <app-load-more
+      noun="accounts"
+      [shown]="accounts.items().length"
+      [hasMore]="accounts.hasMore()"
+      [loading]="accounts.isLoadingMore()"
+      [error]="accounts.loadMoreError()"
+      (loadMore)="accounts.loadMore()"
+      (retry)="accounts.retry()"
+    />
+  }
+}
