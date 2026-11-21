@@ -920,6 +920,21 @@ prompt; "Edit in order builder" hands the draft to the builder
 order by hand. Example requests are generated from the selected account's own
 sites and users, so each one resolves.
 
+### Search page
+
+`/search?q=&entity=` searches as you type: the text is debounced
+(`SEARCH_DEBOUNCE_MS`), a filter or a link applies at once, and `switchMap`
+cancels the request in flight when a newer query starts. Results are grouped by
+entity in the order of each group's best hit, since the API ranks across
+entities. The filter chips count every entity from one unfiltered search (up to
+50 hits); with a filter on, a second request fetches up to 50 of that entity.
+Highlights arrive HTML-escaped with `<mark>` tags; the page does not bind them
+with `[innerHTML]` but splits them into text and `<mark>` parts and decodes the
+text (`highlight.ts`), so names can never become markup. Users link to their
+account's users tab filtered by name, numbers to the numbers tab filtered by
+status, orders to the order. ↓ from the box moves into the results; ↑ ↓ Home
+End move between them and Escape goes back to the box.
+
 ### Layout
 
 Tables are `mat-table`s inside `.app-table-card` (`styles/_tables.scss`). Each row
