@@ -33,6 +33,7 @@
         class="app-table"
         aria-label="Orders"
         [class.with-account]="showAccount()"
+        [class.narrow]="medium()"
         [dataSource]="orders()"
         [trackBy]="trackById"
       >

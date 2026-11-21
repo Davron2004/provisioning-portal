@@ -8,6 +8,7 @@ import {
   computed,
   effect,
   inject,
+  linkedSignal,
   signal,
   viewChild,
 } from '@angular/core';
@@ -19,7 +20,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { COMPACT_LAYOUT, injectMediaQuery } from '../../shared/layout/media-query';
+import { COMPACT_LAYOUT, MEDIUM_LAYOUT, injectMediaQuery } from '../../shared/layout/media-query';
 import { BrandMark } from '../../shared/ui/brand-mark/brand-mark';
 import { ConnectionStatus } from '../connection-status/connection-status';
 import { GlobalSearch } from '../global-search/global-search';
@@ -57,14 +58,27 @@ export class Shell {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly content = viewChild.required('content', { read: ElementRef<HTMLElement> });
 
+  /** Below 960px: the navigation is a drawer over the content. */
   protected readonly compact = injectMediaQuery(COMPACT_LAYOUT);
-  /** Desktop: icon-only rail instead of the full navigation. */
+  private readonly belowWide = injectMediaQuery(MEDIUM_LAYOUT);
+  /** 960-1279px: the navigation is docked, but starts as the icon rail. */
+  private readonly medium = computed(() => this.belowWide() && !this.compact());
+  /** Wide screens: the person's choice of rail or full navigation, remembered. */
   protected readonly railCollapsed = signal(this.readCollapsed());
+  /**
+   * Medium screens: the full navigation was opened on purpose. Not remembered, and back
+   * to the rail whenever the window leaves or re-enters the medium range.
+   */
+  private readonly mediumExpanded = linkedSignal({ source: this.medium, computation: () => false });
   /** Compact: the drawer is open. */
   protected readonly drawerOpen = signal(false);
 
+  /** The docked navigation shows icons only. */
+  protected readonly rail = computed(
+    () => !this.compact() && (this.medium() ? !this.mediumExpanded() : this.railCollapsed()),
+  );
   protected readonly navExpanded = computed(() =>
-    this.compact() ? this.drawerOpen() : !this.railCollapsed(),
+    this.compact() ? this.drawerOpen() : !this.rail(),
   );
 
   constructor() {
@@ -90,6 +104,8 @@ export class Shell {
   protected toggleNav(): void {
     if (this.compact()) {
       this.drawerOpen.update((open) => !open);
+    } else if (this.medium()) {
+      this.mediumExpanded.update((expanded) => !expanded);
     } else {
       this.railCollapsed.update((collapsed) => !collapsed);
     }

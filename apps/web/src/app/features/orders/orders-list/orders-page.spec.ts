@@ -7,6 +7,7 @@ import { FakeApi, provideFakeApi } from '../../../../testing/fake-api';
 import { aPage, anOrder, anOrderSummary } from '../../../../testing/fixtures';
 import { FakeRealtime, provideFakeRealtime } from '../../../../testing/realtime-fake';
 import { provideTestConfig } from '../../../../testing/test-config';
+import { FakeViewport, provideViewport } from '../../../../testing/viewport';
 import { OrdersPage } from './orders-page';
 
 const at = (minute: number) => `2026-11-21T14:${String(minute).padStart(2, '0')}:00.000Z`;
@@ -15,7 +16,7 @@ describe('OrdersPage', () => {
   let api: FakeApi;
   let realtime: FakeRealtime;
 
-  const setUp = async (url: string) => {
+  const setUp = async (url: string, width = 1440) => {
     api = new FakeApi().on('/orders', (request) => {
       const status = request.params.get('status');
       const all = [
@@ -45,6 +46,7 @@ describe('OrdersPage', () => {
         provideTestConfig(),
         provideFakeApi(api),
         provideFakeRealtime(realtime),
+        provideViewport(new FakeViewport(width)),
       ],
     });
     const harness = await RouterTestingHarness.create();
@@ -83,6 +85,23 @@ describe('OrdersPage', () => {
 
     expect(titles(host)).toEqual(['Brand new', 'Add 20 users', 'Remove 1 user']);
     expect(textsOf(host, 'td.mat-column-status')[1]).toBe('Active');
+  });
+
+  it('shows every column on wide screens, and leaves out source and submitter below 1280px', async () => {
+    const wide = await setUp('/orders');
+    expect(textsOf(wide.host, 'th')).toEqual([
+      'Order',
+      'Account',
+      'Status',
+      'Lines',
+      'Source',
+      'Submitted by',
+      'Updated',
+    ]);
+    TestBed.resetTestingModule();
+
+    const medium = await setUp('/orders', 1024);
+    expect(textsOf(medium.host, 'th')).toEqual(['Order', 'Account', 'Status', 'Lines', 'Updated']);
   });
 
   it('filters by status through the URL', async () => {

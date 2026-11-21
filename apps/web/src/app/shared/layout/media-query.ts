@@ -5,6 +5,11 @@ import { map } from 'rxjs';
 
 /** Below this width the navigation becomes a drawer over the content. */
 export const COMPACT_LAYOUT = '(max-width: 959.98px)';
+/**
+ * Below this width the content area is too narrow for the full navigation next to a wide
+ * table: the navigation defaults to its icon rail, and tables drop low-value columns.
+ */
+export const MEDIUM_LAYOUT = '(max-width: 1279.98px)';
 /** Phones: tables turn into stacked cards. */
 export const HANDSET_LAYOUT = '(max-width: 599.98px)';
 

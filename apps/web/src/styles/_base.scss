@@ -48,6 +48,13 @@ kbd {
   outline-offset: 2px;
 }
 
+// Material components draw their keyboard focus ring with `.mat-focus-indicator` (turned on
+// in _theme.scss). Filled, tonal and outlined buttons put it 2px outside the button, like
+// the outline above; text buttons draw it on their edge, so give them the same gap.
+.mat-mdc-button > .mat-focus-indicator::before {
+  margin: calc((var(--mat-focus-indicator-border-width) + 2px) * -1);
+}
+
 // Text for screen readers only.
 .app-visually-hidden {
   position: absolute;
