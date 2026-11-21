@@ -7,10 +7,12 @@
   <div class="row">
     <mat-form-field class="account">
       <mat-label>Account</mat-label>
+      <!-- A select without options ignores clicks, so it is disabled until the accounts arrive. -->
       <mat-select
         [value]="selectedAccountId()"
         (selectionChange)="selectAccount($event.value)"
-        placeholder="Choose an account"
+        [disabled]="accountOptions().length === 0"
+        [placeholder]="accounts.isLoading() ? 'Loading accounts…' : 'Choose an account'"
       >
         @for (account of accountOptions(); track account.id) {
           <mat-option [value]="account.id">{{ account.name }}</mat-option>
