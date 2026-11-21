@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser';
 import { HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
@@ -168,7 +169,10 @@ describe('AssistantPage', () => {
       [...host.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
         b.textContent?.includes(name),
       )!;
-    return { host, settle, type, button, navigate };
+    const page = () =>
+      harness.fixture.debugElement.query(By.directive(AssistantPage))
+        .componentInstance as AssistantPage;
+    return { host, settle, type, button, navigate, page };
   };
 
   it('takes the account from the URL and offers examples that fit it', async () => {
@@ -264,6 +268,28 @@ describe('AssistantPage', () => {
       prompt: 'add a user at Kanata',
       draft: anInterpretation().draft,
     });
+  });
+
+  it('asks before leaving an interpreted order that was not submitted', async () => {
+    const { settle, type, button, page } = await setUp();
+    expect(page().unsavedChanges()).toBeNull();
+    await type('add a user at Kanata');
+    button('Interpret').click();
+    await settle();
+    expect(page().unsavedChanges()?.title).toBe('Discard this preview?');
+
+    button('Approve and submit').click();
+    await settle();
+    expect(page().unsavedChanges()).toBeNull();
+  });
+
+  it('does not ask when the draft moves on to the order builder', async () => {
+    const { settle, type, button, page } = await setUp();
+    await type('add a user at Kanata');
+    button('Interpret').click();
+    await settle();
+    button('Edit in order builder').click();
+    expect(page().unsavedChanges()).toBeNull();
   });
 
   it('runs an example in one click and notices when the text changes afterwards', async () => {

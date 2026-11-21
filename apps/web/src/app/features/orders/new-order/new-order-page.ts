@@ -34,6 +34,11 @@ import { DraftHandoff, OrderDraftHandoff } from '../order-draft-handoff';
 import { OrderForm } from '../order-form/order-form';
 import { OrderReview } from '../order-review/order-review';
 import { OrderSubmission } from '../order-submission';
+import {
+  GuardsUnsavedChanges,
+  UnsavedChangesPrompt,
+  confirmBeforeUnload,
+} from '../../../core/navigation/unsaved-changes';
 
 type Step = 'build' | 'review';
 
@@ -70,7 +75,7 @@ interface Reviewed {
   templateUrl: './new-order-page.html',
   styleUrl: './new-order-page.scss',
 })
-export class NewOrderPage {
+export class NewOrderPage implements GuardsUnsavedChanges {
   /** Route parameter (bound with withComponentInputBinding). */
   readonly accountId = input.required<string>();
 
@@ -120,7 +125,17 @@ export class NewOrderPage {
     ? '⌘'
     : 'Ctrl';
 
+  /** Lines typed, added, carried over from the assistant, or previewed, and not submitted. */
+  private readonly hasUnsavedWork = () =>
+    !this.submission.submitted() &&
+    (this.form.lines.dirty ||
+      this.lineCount() > 1 ||
+      this.handoff() !== null ||
+      this.step() === 'review');
+
   constructor() {
+    confirmBeforeUnload(this.hasUnsavedWork);
+
     this.form.lines.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.lineCount.set(this.form.length));
@@ -143,6 +158,16 @@ export class NewOrderPage {
         this.lineCount.set(this.form.length);
       });
     });
+  }
+
+  unsavedChanges(): UnsavedChangesPrompt | null {
+    return this.hasUnsavedWork()
+      ? {
+          title: 'Discard this order?',
+          message: 'Nothing has been submitted. Leaving now discards the lines in this order.',
+          confirmLabel: 'Discard order',
+        }
+      : null;
   }
 
   protected requestPreview(): void {

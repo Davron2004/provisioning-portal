@@ -130,6 +130,24 @@ describe('NewOrderPage', () => {
     expect(navigate).toHaveBeenCalledWith(['/accounts', 'acc_northwind', 'orders', 'ord_new']);
   });
 
+  it('asks before leaving once something is typed, and not after submitting', async () => {
+    const { host, page, settle, button, firstLine } = await setUp();
+    expect(page.unsavedChanges()).toBeNull();
+
+    const firstName = host.querySelector<HTMLInputElement>('input[formcontrolname="firstName"]')!;
+    firstName.value = 'Priya';
+    firstName.dispatchEvent(new Event('input'));
+    await settle();
+    expect(page.unsavedChanges()?.title).toBe('Discard this order?');
+
+    fill(firstLine());
+    button('Preview order').click();
+    await settle();
+    button('Submit order').click();
+    await settle();
+    expect(page.unsavedChanges()).toBeNull();
+  });
+
   it('goes back to the lines as they were', async () => {
     const { host, settle, button, firstLine } = await setUp();
     fill(firstLine());
