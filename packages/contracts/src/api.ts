@@ -83,18 +83,18 @@ export type Overview = z.infer<typeof Overview>;
  * GET    /overview
  * GET    /catalog/devices
  * GET    /search?q=&entity=&accountId=&limit=
- * GET    /accounts?cursor=
+ * GET    /accounts?cursor=&limit=
  * GET    /accounts/{accountId}
  * GET    /accounts/{accountId}/sites
- * GET    /accounts/{accountId}/users?siteId=&cursor=
- * GET    /accounts/{accountId}/numbers?siteId=&status=&cursor=
- * GET    /accounts/{accountId}/orders?status=&cursor=
+ * GET    /accounts/{accountId}/users?siteId=&q=&cursor=&limit=
+ * GET    /accounts/{accountId}/numbers?siteId=&status=&cursor=&limit=
+ * GET    /accounts/{accountId}/orders?status=&cursor=&limit=
  * GET    /accounts/{accountId}/orders/{orderId}
  * POST   /accounts/{accountId}/orders/preview      body: OrderDraft          -> OrderPreview
  * POST   /accounts/{accountId}/orders              body: CreateOrderRequest  -> 202 Order
  * POST   /accounts/{accountId}/orders/{orderId}/retry                        -> 202 Order
  * POST   /accounts/{accountId}/assistant/interpret body: InterpretRequest    -> InterpretResponse
- * GET    /orders?status=&cursor=                   (all accounts, newest first)
+ * GET    /orders?status=&cursor=&limit=  (all accounts, newest first)
  */
 export const ApiPaths = {
   overview: () => '/overview',

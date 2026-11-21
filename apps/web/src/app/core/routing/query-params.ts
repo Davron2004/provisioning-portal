@@ -45,6 +45,8 @@ export interface SearchParam {
   /** What is in the box right now; filter on this so results follow every keystroke. */
   readonly text: Signal<string>;
   set(value: string): void;
+  /** Empties the box and drops any pending URL write. The caller updates the URL itself. */
+  reset(): void;
 }
 
 /**
@@ -66,6 +68,10 @@ export function injectSearchParam(param: () => string | undefined, key = 'q'): S
       timer = setTimeout(() => {
         void updateQuery({ [key]: value.trim() ? value : null });
       }, SEARCH_DEBOUNCE_MS);
+    },
+    reset() {
+      clearTimeout(timer);
+      text.set('');
     },
   };
 }
