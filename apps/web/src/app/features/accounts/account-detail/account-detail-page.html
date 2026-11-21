@@ -1,0 +1,95 @@
+@if (store.accountResource.error(); as error) {
+  <app-page-header title="Account">
+    <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+  </app-page-header>
+  <app-error-state
+    heading="Could not load this account"
+    [error]="error"
+    (retry)="store.accountResource.reload()"
+  />
+} @else {
+  <app-page-header [title]="account()?.name ?? ''" [loading]="!account()">
+    <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+    <a matButton="filled" actions [routerLink]="['/accounts', store.accountId(), 'orders', 'new']">
+      <mat-icon svgIcon="add" />
+      New order
+    </a>
+    <div class="meta">
+      @if (account(); as account) {
+        <app-plan-badge [plan]="account.plan" />
+        <app-status-chip [status]="account.status" />
+        <span class="contact">
+          <mat-icon svgIcon="person" aria-hidden="true" />
+          <span class="app-visually-hidden">Primary contact:</span>
+          <span class="contact-name">{{ account.primaryContact.name }}</span>
+          <a class="contact-email" [href]="'mailto:' + account.primaryContact.email">{{
+            account.primaryContact.email
+          }}</a>
+        </span>
+      } @else {
+        <app-skeleton width="min(420px, 80vw)" height="24px" />
+      }
+    </div>
+  </app-page-header>
+
+  <dl class="summary" [attr.aria-busy]="!account()">
+    @if (account(); as account) {
+      <div class="stat">
+        <dt>Sites</dt>
+        <dd class="app-numeric">{{ account.siteCount }}</dd>
+      </div>
+      <div class="stat">
+        <dt>Users</dt>
+        <dd class="app-numeric">{{ account.userCount }}</dd>
+      </div>
+      <div class="stat stat-wide">
+        <dt>Numbers in use</dt>
+        <dd>
+          <app-utilization-meter
+            [used]="account.numbersAssigned"
+            [total]="account.numbersTotal"
+            label="Numbers in use"
+          />
+        </dd>
+      </div>
+      <div class="stat">
+        <dt>Customer since</dt>
+        <dd>{{ customerSince() }}</dd>
+      </div>
+    } @else {
+      @for (stat of [1, 2, 3, 4]; track stat) {
+        <div class="stat" aria-hidden="true">
+          <app-skeleton width="64px" height="12px" />
+          <app-skeleton width="96px" height="24px" />
+        </div>
+      }
+    }
+  </dl>
+
+  <nav
+    mat-tab-nav-bar
+    class="tabs"
+    mat-stretch-tabs="false"
+    mat-align-tabs="start"
+    aria-label="Account sections"
+    [tabPanel]="panel"
+  >
+    @for (tab of tabs(); track tab.path) {
+      <a
+        mat-tab-link
+        [routerLink]="tab.path"
+        routerLinkActive
+        #rla="routerLinkActive"
+        [active]="rla.isActive"
+      >
+        {{ tab.label }}
+        @if (tab.count !== undefined) {
+          <span class="tab-count app-numeric">{{ tab.count }}</span>
+        }
+      </a>
+    }
+  </nav>
+  <mat-tab-nav-panel #panel class="panel">
+    <router-outlet />
+  </mat-tab-nav-panel>
+}

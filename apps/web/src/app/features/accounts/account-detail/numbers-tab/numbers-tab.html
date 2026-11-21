@@ -1,0 +1,140 @@
+<div class="app-filter-bar" role="search" aria-label="Filter numbers">
+  <mat-form-field>
+    <mat-label>Site</mat-label>
+    <mat-select [value]="siteId()" (selectionChange)="setSite($event.value)">
+      <mat-option [value]="null">All sites</mat-option>
+      @for (site of store.sites() ?? []; track site.id) {
+        <mat-option [value]="site.id">{{ site.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-button-toggle-group
+    class="status-toggle"
+    aria-label="Number status"
+    hideSingleSelectionIndicator
+    [value]="statusFilter()"
+    (change)="setStatus($event.value)"
+  >
+    <mat-button-toggle [value]="null">All</mat-button-toggle>
+    @for (option of statusOptions; track option.value) {
+      <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+  <p class="app-result-count app-numeric" aria-live="polite">
+    @if (!numbers.isFirstLoad() && !numbers.error()) {
+      {{ loadedCount() }}
+    }
+  </p>
+</div>
+
+@if (numbers.error(); as error) {
+  <app-error-state heading="Could not load numbers" [error]="error" (retry)="numbers.retry()" />
+} @else if (numbers.isFirstLoad()) {
+  <app-table-skeleton
+    class="app-table-card"
+    label="Loading numbers"
+    [columns]="[1.4, 1.4, 1.2, 1.6, 1]"
+  />
+} @else if (numbers.items().length === 0) {
+  @if (filtered()) {
+    <app-empty-state
+      icon="dialpad"
+      heading="No numbers match"
+      message="No numbers in the inventory have this site and status."
+    >
+      <button matButton="outlined" type="button" (click)="clearFilters()">Clear filters</button>
+    </app-empty-state>
+  } @else {
+    <app-empty-state
+      icon="dialpad"
+      heading="No numbers yet"
+      message="Phone numbers ported or ordered for this account appear here."
+    />
+  }
+} @else if (handset()) {
+  <ul class="app-card-list" aria-label="Numbers">
+    @for (number of numbers.items(); track number.e164) {
+      <li class="app-card">
+        <div class="app-card-top">
+          <span class="app-card-title app-numeric">{{ number.e164 | phoneNumber }}</span>
+          <app-status-chip [status]="number.status" />
+        </div>
+        <dl class="app-card-facts">
+          <div>
+            <dt>Site</dt>
+            <dd>{{ store.siteNames().get(number.siteId) ?? '' }}</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd><app-relative-time [value]="number.updatedAt" /></dd>
+          </div>
+        </dl>
+        @if (number.orderId) {
+          <a class="order-link" [routerLink]="['../orders', number.orderId]">Held by an order</a>
+        }
+      </li>
+    }
+  </ul>
+} @else {
+  <div class="app-table-card">
+    <div class="app-table-scroll">
+      <table
+        mat-table
+        class="app-table"
+        aria-label="Phone numbers"
+        [dataSource]="numbers.items()"
+        [trackBy]="trackByNumber"
+      >
+        <ng-container matColumnDef="number">
+          <th mat-header-cell *matHeaderCellDef>Number</th>
+          <td mat-cell *matCellDef="let number" class="app-numeric number">
+            {{ number.e164 | phoneNumber }}
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="site">
+          <th mat-header-cell *matHeaderCellDef>Site</th>
+          <td mat-cell *matCellDef="let number">
+            {{ store.siteNames().get(number.siteId) ?? '' }}
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let number">
+            <app-status-chip [status]="number.status" />
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="order">
+          <th mat-header-cell *matHeaderCellDef>Order</th>
+          <td mat-cell *matCellDef="let number">
+            @if (number.orderId) {
+              <a [routerLink]="['../orders', number.orderId]">View order</a>
+            } @else {
+              <span class="app-muted" aria-label="No order">–</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="updated">
+          <th mat-header-cell *matHeaderCellDef class="app-align-end">Updated</th>
+          <td mat-cell *matCellDef="let number" class="app-align-end app-muted">
+            <app-relative-time [value]="number.updatedAt" />
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+        <tr mat-row *matRowDef="let number; columns: columns()"></tr>
+      </table>
+    </div>
+  </div>
+}
+
+@if (numbers.hasMore() || numbers.loadMoreError()) {
+  <app-load-more
+    noun="numbers"
+    [shown]="numbers.items().length"
+    [hasMore]="numbers.hasMore()"
+    [loading]="numbers.isLoadingMore()"
+    [error]="numbers.loadMoreError()"
+    (loadMore)="numbers.loadMore()"
+    (retry)="numbers.retry()"
+  />
+}
