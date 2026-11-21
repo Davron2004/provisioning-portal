@@ -131,8 +131,21 @@
   background: var(--app-status-error-accent);
 }
 
+// In progress is not done: the info tone at reduced strength, striped, so a bar of only
+// running lines never reads as a full, finished one. The stripes drift while lines run
+// (still with reduced motion, see _base.scss).
 .provisioning {
-  background: var(--app-status-info-accent);
+  background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--app-status-info-accent) 50%, transparent) 0 4px,
+      transparent 4px 8px
+    )
+    var(--app-status-info-bg);
+  background-size: 11.31px 11.31px;
+
+  &.segment {
+    animation: drift 1s linear infinite;
+  }
 }
 
 // Pending lines are the empty track at the end.
@@ -162,6 +175,12 @@
 
   &.pending {
     background: var(--mat-sys-surface-container-highest);
+  }
+}
+
+@keyframes drift {
+  to {
+    background-position: 11.31px 0;
   }
 }
 

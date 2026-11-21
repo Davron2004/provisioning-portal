@@ -33,7 +33,7 @@ test('the preview blocks submitting while a line has an error, and shows it on t
   await expect(page.getByRole('list', { name: 'Problems on line 2' })).toHaveText(
     'error: Extension 3399 is also on line 1',
   );
-  await expect(page.getByText('Fix the errors to submit.')).toBeVisible();
+  await expect(builder.submit).toHaveAccessibleDescription('1 error to fix before submitting');
   await expect(builder.submit).toBeDisabled();
 
   // Back in the builder, the issue sits on the line that has it.

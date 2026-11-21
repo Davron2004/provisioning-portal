@@ -32,10 +32,27 @@ a {
   color: var(--mat-sys-primary);
 }
 
-code,
-kbd {
+code {
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.9em;
+}
+
+// Key caps ("Press ⌘ Enter", the "/" in the toolbar search). The UI font, not a
+// monospace one, so symbol keys (⌘, ⇧) and word keys (Enter) come out the same size.
+kbd {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 5px;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+  font-weight: 500;
+  line-height: 1;
+  vertical-align: baseline;
 }
 
 // Programmatic focus targets (page headings, <main>) should not show a ring.

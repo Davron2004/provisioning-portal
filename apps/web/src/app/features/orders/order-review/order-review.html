@@ -3,16 +3,11 @@
   <ul class="counts">
     @for (item of summary(); track item.action) {
       <li>
-        <app-action-badge
-          class="count app-numeric"
-          [class.zero]="item.count === 0"
-          [action]="item.action"
-          [label]="item.label"
-        />
+        <app-action-badge class="count app-numeric" [action]="item.action" [label]="item.label" />
       </li>
     }
   </ul>
-  <p class="verdict" [class.blocked]="!preview().valid" role="status">
+  <p id="review-verdict" class="verdict" [class.blocked]="!preview().valid" role="status">
     <mat-icon [svgIcon]="preview().valid ? 'check_circle' : 'error'" aria-hidden="true" />
     {{ verdict() }}
   </p>
@@ -36,7 +31,9 @@
         </div>
         <p class="who">
           <span class="name" [class.struck]="row.action === 'remove_user'">{{ row.name }}</span>
-          <span class="email">{{ row.email }}</span>
+          <span class="email"
+            >{{ emailLines(row.email)[0] }}<wbr />{{ emailLines(row.email)[1] }}</span
+          >
         </p>
         <dl class="app-card-facts">
           @for (field of fields; track field) {
@@ -80,7 +77,9 @@
                 <span class="name" [class.struck]="row.action === 'remove_user'">{{
                   row.name
                 }}</span>
-                <span class="email">{{ row.email }}</span>
+                <span class="email"
+                  >{{ emailLines(row.email)[0] }}<wbr />{{ emailLines(row.email)[1] }}</span
+                >
               </th>
               @for (field of fields; track field) {
                 <td [class.app-numeric]="field === 'extension' || field === 'did'">
@@ -127,15 +126,12 @@
   </button>
   <ng-content select="[review-note]" />
   <span class="spacer"></span>
-  @if (!preview().valid) {
-    <p id="review-blocked-hint" class="hint">Fix the errors to submit.</p>
-  }
   <button
     matButton="filled"
     type="button"
     class="submit"
     [disabled]="!canSubmit()"
-    [attr.aria-describedby]="preview().valid ? null : 'review-blocked-hint'"
+    [attr.aria-describedby]="preview().valid ? null : 'review-verdict'"
     [attr.aria-busy]="submitting() || null"
     (click)="submitOrder.emit()"
   >

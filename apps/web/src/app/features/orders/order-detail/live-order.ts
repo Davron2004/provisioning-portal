@@ -1,4 +1,4 @@
-import { Order, OrderLine, OrderStatus } from '@provisioning/contracts';
+import { Order, OrderLine, OrderStatus, TERMINAL_ORDER_STATUSES } from '@provisioning/contracts';
 
 /**
  * The most recent of two versions of an order. Pushes and fetches race: a fetch that
@@ -37,6 +37,25 @@ export function optimisticRetry(order: Order): Order {
       failed: 0,
     },
   };
+}
+
+/**
+ * When the order's latest run started: its submission, or, after a retry of failed lines,
+ * the first status change that followed the order finishing.
+ */
+export function latestRunStart(order: Pick<Order, 'createdAt' | 'events'>): string {
+  let start = order.createdAt;
+  let finished = false;
+  for (const event of order.events) {
+    if (!event.status) {
+      continue;
+    }
+    if (finished) {
+      start = event.at;
+    }
+    finished = TERMINAL_ORDER_STATUSES.includes(event.status);
+  }
+  return start;
 }
 
 /** Sentences for screen readers when the order's status changes. */

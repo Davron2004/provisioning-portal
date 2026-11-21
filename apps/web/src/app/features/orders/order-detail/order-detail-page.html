@@ -14,8 +14,7 @@
         {{ o.submittedBy }}<span class="sep" aria-hidden="true">·</span
         ><app-relative-time [value]="o.createdAt" />
         @if (duration(); as took) {
-          <span class="sep" aria-hidden="true">·</span
-          ><span class="app-numeric">Took {{ took }}</span>
+          <span class="sep" aria-hidden="true">·</span><span class="app-numeric">{{ took }}</span>
         }
       </p>
     </div>

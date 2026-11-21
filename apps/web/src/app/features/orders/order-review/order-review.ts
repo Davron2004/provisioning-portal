@@ -67,13 +67,14 @@ export class OrderReview {
   protected readonly hasAuto = computed(() =>
     this.rows().some((row) => REVIEW_FIELDS.some((field) => row.cells[field].auto)),
   );
+  /** What the order does, by action. Actions it has none of are left out, not "0 to …". */
   protected readonly summary = computed(() => {
     const { adds, updates, removes } = this.preview().summary;
     return [
       { action: 'add_user' as const, count: adds, label: `${adds} to add` },
       { action: 'update_user' as const, count: updates, label: `${updates} to change` },
       { action: 'remove_user' as const, count: removes, label: `${removes} to remove` },
-    ];
+    ].filter((item) => item.count > 0);
   });
   protected readonly verdict = computed(() => {
     const { errors, warnings } = this.counts();
@@ -88,5 +89,11 @@ export class OrderReview {
     const error = this.submitError();
     return error ? toApiProblem(error).message : null;
   });
+  /** An email split before its "@", so a narrow column wraps it there and not mid-word. */
+  protected emailLines(email: string): [string, string] {
+    const at = email.lastIndexOf('@');
+    return at > 0 ? [email.slice(0, at), email.slice(at)] : [email, ''];
+  }
+
   protected readonly canSubmit = computed(() => this.preview().valid && !this.submitting());
 }

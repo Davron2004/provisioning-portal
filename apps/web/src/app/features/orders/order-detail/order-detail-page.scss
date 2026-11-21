@@ -130,10 +130,18 @@ h2 {
     vertical-align: middle;
   }
 
+  // Row fills are inset shadows, not backgrounds (see _tables.scss).
+  tr {
+    box-shadow: inset 0 0 0 100vmax var(--app-row-fill, transparent);
+  }
+
+  thead tr {
+    --app-row-fill: var(--app-surface-card-muted);
+  }
+
   thead th {
     height: 44px;
     padding-block: 0;
-    background: var(--app-surface-card-muted);
     color: var(--mat-sys-on-surface-variant);
     font: var(--mat-sys-label-large);
     white-space: nowrap;
@@ -141,11 +149,11 @@ h2 {
 
   tbody tr {
     border-top: 1px solid var(--mat-sys-outline-variant);
-    transition: background-color var(--app-duration-medium) var(--app-ease-standard);
+    transition: box-shadow var(--app-duration-medium) var(--app-ease-standard);
   }
 
   tr[data-status='failed'] {
-    background: color-mix(in srgb, var(--app-status-error-bg) 40%, transparent);
+    --app-row-fill: color-mix(in srgb, var(--app-status-error-bg) 40%, transparent);
   }
 
   .num {

@@ -100,6 +100,11 @@ describe('OrderReview', () => {
     expect(host.querySelector('.verdict')?.textContent).toContain('Ready to submit');
   });
 
+  it('leaves out actions the order has none of', async () => {
+    const { host } = await render(aPreview({ summary: { adds: 2, updates: 0, removes: 0 } }));
+    expect(textsOf(host, '.counts li')).toEqual(['2 to add']);
+  });
+
   it('shows a new user with the values the server assigned tagged as automatic', async () => {
     const { host } = await render(aPreview());
     const add = rowOf(host, 0);
@@ -169,7 +174,9 @@ describe('OrderReview', () => {
 
     const submit = host.querySelector<HTMLButtonElement>('button.submit')!;
     expect(submit.disabled).toBe(true);
-    expect(submit.getAttribute('aria-describedby')).toBe('review-blocked-hint');
+    // The verdict says why: one message, not a second one by the button.
+    expect(submit.getAttribute('aria-describedby')).toBe('review-verdict');
+    expect(host.querySelector('#review-verdict')?.textContent).toContain('2 errors to fix');
   });
 
   it('lets warnings through and reports the buttons', async () => {

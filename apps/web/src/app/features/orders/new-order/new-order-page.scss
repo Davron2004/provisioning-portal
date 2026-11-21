@@ -128,13 +128,6 @@ app-page-header {
   color: var(--mat-sys-on-surface-variant);
 }
 
-kbd {
-  padding: 0 4px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 4px;
-  font-size: 0.85em;
-}
-
 @media (max-width: 599.98px) {
   .keys {
     display: none;

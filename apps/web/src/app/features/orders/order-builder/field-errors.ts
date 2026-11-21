@@ -1,7 +1,7 @@
 import { Signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl, ControlEvent } from '@angular/forms';
-import { startWith, switchMap } from 'rxjs';
+import { AbstractControl, ControlEvent, FormArray, FormGroup } from '@angular/forms';
+import { Observable, distinctUntilChanged, map, merge, startWith, switchMap } from 'rxjs';
 
 /**
  * The one message to show under a field: the first error it has, in words.
@@ -47,12 +47,54 @@ export function fieldError(control: AbstractControl, label: string): string {
 }
 
 /**
+ * Whether the control shows an error somewhere: a field inside it is invalid and has
+ * been touched (the moment Material shows a field's error). Disabled fields never count.
+ */
+export function showsFieldError(control: AbstractControl): boolean {
+  if (control.disabled) {
+    return false;
+  }
+  if (control instanceof FormGroup || control instanceof FormArray) {
+    return Object.values(control.controls).some((child: AbstractControl) => showsFieldError(child));
+  }
+  return control.invalid && control.touched;
+}
+
+/**
  * A signal that ticks whenever the control, or anything inside it, changes value,
  * validity, or touched state. Reading it in a computed or an OnPush template keeps
  * them in step with a form, which is not made of signals. Injection context only.
  */
 export function watchControl(control: Signal<AbstractControl>): Signal<ControlEvent | null> {
-  return toSignal(toObservable(control).pipe(switchMap((c) => c.events.pipe(startWith(null)))), {
-    initialValue: null,
-  });
+  return toSignal(
+    toObservable(control).pipe(switchMap((c) => deepEvents(c).pipe(startWith(null)))),
+    {
+      initialValue: null,
+    },
+  );
+}
+
+const childrenOf = (control: AbstractControl): AbstractControl[] =>
+  control instanceof FormGroup || control instanceof FormArray
+    ? Object.values(control.controls as Record<string, AbstractControl>)
+    : [];
+
+const sameControls = (a: AbstractControl[], b: AbstractControl[]) =>
+  a.length === b.length && a.every((control, i) => control === b[i]);
+
+/**
+ * Events of the control and of every control inside it. A parent does not hear about
+ * everything on its own: `markAllAsTouched()` touches the children "only self", for one.
+ * Follows lines being added and removed.
+ */
+function deepEvents(control: AbstractControl): Observable<ControlEvent> {
+  if (!(control instanceof FormGroup || control instanceof FormArray)) {
+    return control.events;
+  }
+  return control.events.pipe(
+    startWith(null),
+    map(() => childrenOf(control)),
+    distinctUntilChanged(sameControls),
+    switchMap((children) => merge(control.events, ...children.map(deepEvents))),
+  );
 }
