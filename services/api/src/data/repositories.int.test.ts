@@ -69,6 +69,54 @@ describe('repositories against DynamoDB Local', () => {
     expect(page.items).toHaveLength(0);
   });
 
+  it('filters users by text with full pages and a working cursor', async () => {
+    const accountUsers = seed.users.filter((u) => u.accountId === 'acc_lumen-ridge');
+    const target = accountUsers.find((u) => u.did)!;
+    const digits = target.did!.slice(-7);
+    const spaced = `${target.did!.slice(2, 5)} ${target.did!.slice(5, 8)} ${target.did!.slice(8)}`;
+
+    for (const q of [digits, spaced, target.lastName.toUpperCase()]) {
+      const { items } = await collect((cursor) =>
+        repos.users.list('acc_lumen-ridge', { q, cursor, limit: 100 }),
+      );
+      expect(
+        items.map((u) => u.id),
+        q,
+      ).toContain(target.id);
+    }
+
+    // A single-character filter matches many users: pages must be full except the last,
+    // and paging must return exactly the same users, in order, as one big page.
+    const q = 'a';
+    const whole = await repos.users.list('acc_lumen-ridge', { q, limit: 100 });
+    expect(whole.items.length).toBeGreaterThan(7);
+    const sizes: number[] = [];
+    const { items } = await collect(async (cursor) => {
+      const page = await repos.users.list('acc_lumen-ridge', { q, cursor, limit: 7 });
+      sizes.push(page.items.length);
+      return page;
+    });
+    expect(items.map((u) => u.id)).toEqual(whole.items.map((u) => u.id));
+    expect(sizes.slice(0, -1).every((n) => n === 7)).toBe(true);
+    expect(sizes.at(-1)).toBeGreaterThan(0);
+
+    // A query matching one user returns it on the first page with no cursor.
+    const one = await repos.users.list('acc_lumen-ridge', { q: target.email, limit: 5 });
+    expect(one.items.map((u) => u.id)).toEqual([target.id]);
+    expect(one.nextCursor).toBeNull();
+
+    const none = await repos.users.list('acc_lumen-ridge', { q: 'zzzzqqq' });
+    expect(none).toEqual({ items: [], nextCursor: null });
+
+    // Site scoping still holds.
+    const site = await repos.users.list('acc_lumen-ridge', {
+      siteId: 'site_lr-kanata',
+      q,
+      limit: 100,
+    });
+    expect(site.items.every((u) => u.siteId === 'site_lr-kanata')).toBe(true);
+  });
+
   it('filters numbers by site and status', async () => {
     const page = await repos.numbers.list('acc_lumen-ridge', {
       siteId: 'site_lr-kanata',

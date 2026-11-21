@@ -96,6 +96,15 @@ Notes on the choices:
 - **Account orders by status use a filter, not a third GSI.** One account has a
   bounded number of orders; the repository repeats the query (at most five
   round trips) until the page is full, so filtered pages are not short.
+- **The users text filter reads the partition in the service.** `q` matches
+  first, last and full name, email, extension and the DID's digits however typed
+  (case-insensitive, every term must match). That is not a DynamoDB
+  `FilterExpression`, and filter plus `Limit` gives short pages. An account's (or
+  site's) users are a bounded partition, so the repository reads the same GSI
+  query in chunks of 100, matches in memory and stops when the page is full. The
+  cursor is the key of the last user returned, so the next page resumes right
+  after it; a page is short only at the end of the list. A search attribute or
+  OpenSearch would replace this beyond a few thousand users per account.
 - **`ORDERS` is a single GSI1 partition.** Fine at this scale (orders are
   written a few times a minute). At high volume it would be sharded by day
   (`ORDERS#2026-11-21`) and merged when reading.
@@ -156,7 +165,7 @@ path, status and duration.
 | GET    | `/accounts?cursor=&limit=`                              |                      | `AccountPage`       |
 | GET    | `/accounts/{accountId}`                                 |                      | `Account`           |
 | GET    | `/accounts/{accountId}/sites`                           |                      | `SitePage`          |
-| GET    | `/accounts/{accountId}/users?siteId=&cursor=`           |                      | `VoiceUserPage`     |
+| GET    | `/accounts/{accountId}/users?siteId=&q=&cursor=&limit=` |                      | `VoiceUserPage`     |
 | GET    | `/accounts/{accountId}/numbers?siteId=&status=&cursor=` |                      | `PhoneNumberPage`   |
 | GET    | `/accounts/{accountId}/orders?status=&cursor=`          |                      | `OrderSummaryPage`  |
 | GET    | `/accounts/{accountId}/orders/{orderId}`                |                      | `Order`             |
@@ -530,16 +539,16 @@ typing pauses (`injectSearchParam()`), so the box never fights the router.
 | Page                    | URL state                                           |
 | ----------------------- | --------------------------------------------------- |
 | `/accounts`             | `q`, `status`, `plan`, `sort`, `dir`                |
-| `/accounts/:id/users`   | `site` (sent to the API), `q` (filters loaded rows) |
+| `/accounts/:id/users`   | `site`, `q` (both sent to the API)                  |
 | `/accounts/:id/sites`   | none                                                |
 | `/accounts/:id/numbers` | `site`, `status` (both sent to the API)             |
 | `/accounts/:id/orders`  | `status` (sent to the API)                          |
 
 The account tabs are child routes of `accounts/:accountId`. The page provides an
 `AccountStore` (the account and its sites, loaded once), which every tab
-injects. Client-side filters only see loaded rows; the count above the list
-says so ("3 matches in the first 25 users"), and totals come from the counters
-on the account and site items.
+injects. The users text filter runs on the server (see the design decisions above), so it searches
+every user, not just the loaded page; totals come from the counters on the
+account and site items.
 
 ### Live updates
 
