@@ -1,6 +1,6 @@
 <app-page-header
   title="Assistant"
-  subtitle="Describe a change in plain English. You review the exact order before anything is provisioned."
+  subtitle="Describe a change in plain English, then review the exact order it becomes."
 />
 
 <section class="request" aria-label="Your request">
@@ -75,8 +75,6 @@
     </button>
     @if (!selectedAccountId()) {
       <span class="hint">Choose an account first.</span>
-    } @else {
-      <span class="hint">Nothing is provisioned until you approve the order.</span>
     }
   </div>
 </section>
@@ -146,7 +144,9 @@
             }
           </ul>
         }
-        @if (r.intent.unresolved.length > 0) {
+        <!-- When nothing at all was understood, the "nothing to order" panel says so instead:
+             the request above is the part that was not understood. -->
+        @if (r.intent.unresolved.length > 0 && operations().length > 0) {
           <div class="unresolved" role="note">
             <mat-icon svgIcon="warning" aria-hidden="true" />
             <div>
@@ -163,13 +163,7 @@
 
       @if (r.preview; as preview) {
         <section class="review" aria-labelledby="review-heading">
-          <div class="review-head">
-            <h2 id="review-heading">Order to approve</h2>
-            <p class="not-yet">
-              <mat-icon svgIcon="lock" aria-hidden="true" />
-              Nothing has been provisioned. This runs only when you approve it.
-            </p>
-          </div>
+          <h2 id="review-heading">Order to approve</h2>
           <app-order-review
             [preview]="preview"
             [draft]="r.draft"
@@ -182,14 +176,20 @@
             backIcon="edit"
             (back)="editInBuilder()"
             (submitOrder)="approve()"
-          />
+          >
+            <p review-note class="review-note">Nothing is provisioned until you approve it.</p>
+          </app-order-review>
         </section>
       } @else {
         <div class="nothing">
           <mat-icon svgIcon="info" aria-hidden="true" />
           <p>
-            Nothing to order from this request. Try naming a site, people or extensions, like the
-            examples above.
+            @if (r.intent.unresolved.length > 0 && operations().length === 0) {
+              The request was not understood, so there is nothing to order.
+            } @else {
+              Nothing to order from this request.
+            }
+            Try naming a site, people or extensions, like the examples above.
           </p>
         </div>
       }

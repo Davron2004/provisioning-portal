@@ -104,6 +104,8 @@ describe('UsersTab', () => {
     const api = anAccountApi().onUsers('/accounts/acc_northwind/users', [ADA, GRACE]);
     const page = await setUpAccountPage(api, '/accounts/acc_northwind/users?q=zzz');
     expect(page.host().querySelector('app-empty-state h2')?.textContent).toBe('No users match');
+    // Offered once, in the empty state, not again in the filter bar.
+    expect(page.host().querySelector('.app-filter-bar button')).toBeNull();
 
     page.host().querySelector<HTMLButtonElement>('app-empty-state button')!.click();
     await page.settle();

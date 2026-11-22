@@ -41,7 +41,17 @@ function describeTarget(target: TargetSelector): string {
   return list(parts) || 'nobody';
 }
 
-/** One sentence per operation, e.g. "Add 20 users at “Kanata” with voicemail, no device". */
+/** What new users get: "with voicemail and “desk phones”", "with voicemail, no device"… */
+function extras(voicemail: boolean, device: string | null): string {
+  if (device) {
+    return voicemail
+      ? `with voicemail and ${quote(device)}`
+      : `with ${quote(device)}, no voicemail`;
+  }
+  return voicemail ? 'with voicemail, no device' : 'without voicemail or a device';
+}
+
+/** One sentence per operation, e.g. "Add 20 users at “Kanata”, with voicemail, no device". */
 export function describeOperation(operation: IntentOperation): string {
   switch (operation.op) {
     case 'add_users': {
@@ -55,9 +65,7 @@ export function describeOperation(operation: IntentOperation): string {
       ]
         .join(' and ')
         .replace(/\s+/g, ' ');
-      const voicemail = operation.voicemail ? 'with voicemail' : 'without voicemail';
-      const device = operation.device ? `a ${quote(operation.device)}` : 'no device';
-      return `Add ${who} at ${quote(operation.site)}, ${voicemail}, ${device}`;
+      return `Add ${who} at ${quote(operation.site)}, ${extras(operation.voicemail, operation.device)}`;
     }
     case 'update_users': {
       const changes: string[] = [];

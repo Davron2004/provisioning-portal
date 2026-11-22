@@ -113,6 +113,12 @@ export class AccountsPage {
     ),
   );
 
+  /** Nothing matches the filters: the empty state offers "Clear filters", so the bar does not. */
+  protected readonly noMatches = computed(
+    () =>
+      !this.accounts.isFirstLoad() && this.accounts.items().length > 0 && this.rows().length === 0,
+  );
+
   protected readonly resultCount = computed(() =>
     resultCountLabel(
       this.rows().length,

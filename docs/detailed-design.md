@@ -512,7 +512,9 @@ preview the person rejects.
   `new.user.<site>.NN@<account domain>`, skipping addresses already taken.
   Extensions and numbers are allocated by the normal preview.
 - More than 100 resulting lines returns no draft and a note to split the
-  request; parts of the text that are not orders come back as notes.
+  request. Parts of the text that are not orders stay in the intent's
+  `unresolved` list and are not repeated as notes. Notes quote the person's
+  words in typographic quotes (“Kanata”).
 
 **Providers** (`ASSISTANT_PROVIDER`, behind `IntentProvider`):
 
@@ -913,10 +915,11 @@ live region; the step indicator pulses only when reduced motion is off.
 request cancels the one in flight) and shows, in order: what was asked, the
 operations as plain sentences (site and device names quoted as written, since
 the resolution notes say what each matched), the notes, anything left
-unresolved, and who interpreted it ("Rules (offline parser, no language
-model)" or "Claude Opus 5.5 via Amazon Bedrock"). The preview renders in the
-same `OrderReview` as a manual order, under a line saying nothing has been
-provisioned. "Approve and submit" posts it with `source: "assistant"` and the
+unresolved (when nothing was understood, one "nothing to order" message says so
+instead of repeating the request), and who interpreted it ("Rules (offline
+parser, no language model)" or "Claude Opus 5.5 via Amazon Bedrock"). The
+preview renders in the same `OrderReview` as a manual order, with "Nothing is
+provisioned until you approve it." beside the approve button. "Approve and submit" posts it with `source: "assistant"` and the
 prompt; "Edit in order builder" hands the draft to the builder
 (`OrderDraftHandoff`), which keeps the prompt with the order. A
 `502 assistant_unavailable` gets its own error state with a link to build the

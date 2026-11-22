@@ -47,7 +47,11 @@ export class OverviewPage {
   protected readonly data = computed(() =>
     this.overview.hasValue() ? this.overview.value() : undefined,
   );
-  protected readonly skeletonRows = Array.from({ length: 5 });
+  /**
+   * As many placeholder rows as the overview lists recent orders (eight), so a busy
+   * system's list arrives without pushing the panel below it on narrower screens.
+   */
+  protected readonly skeletonRows = Array.from({ length: 8 });
 
   protected readonly numbersTotal = computed(() => {
     const data = this.data();

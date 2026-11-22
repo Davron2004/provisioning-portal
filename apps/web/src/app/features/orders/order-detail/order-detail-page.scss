@@ -35,6 +35,13 @@ h2 {
   }
 }
 
+// Inline blocks: a fact moves to the next line whole; one longer than the line (a long
+// address on a phone) still breaks anywhere inside.
+.fact {
+  display: inline-block;
+  max-width: 100%;
+}
+
 .sep {
   margin: 0 var(--app-space-2);
   color: var(--mat-sys-outline);
@@ -185,10 +192,11 @@ h2 {
   border-color: var(--app-status-error-accent);
 }
 
+// Placeholders as tall as the sections they stand in for, spaced like them.
 .loading {
   display: flex;
   flex-direction: column;
-  gap: var(--app-space-4);
+  gap: var(--app-space-6);
 }
 
 @keyframes ping {

@@ -24,7 +24,7 @@ test('a plain-English request becomes a reviewed order that provisions live', as
 
   // The order the person approves: three placeholder users at Kanata Campus, nothing provisioned yet.
   const review = page.getByRole('region', { name: 'Order to approve' });
-  await expect(review.getByText('Nothing has been provisioned.')).toBeVisible();
+  await expect(review.getByText('Nothing is provisioned until you approve it.')).toBeVisible();
   const lines = bodyRows(review.getByRole('table'));
   await expect(lines).toHaveCount(3);
   for (const line of await lines.all()) {
@@ -58,9 +58,10 @@ test('a request it cannot understand says so and orders nothing', async ({ page 
   await page.getByRole('textbox', { name: 'What should change?' }).fill('order pizza for the team');
   await page.getByRole('button', { name: 'Interpret' }).click();
 
-  const note = page.getByRole('note');
-  await expect(note).toContainText('Not understood, so left out:');
-  await expect(note.getByRole('listitem')).toHaveText(['“order pizza for the team”']);
-  await expect(page.getByText('Nothing to order from this request.')).toBeVisible();
+  // Said once: the request is quoted, and not repeated as a part that was left out.
+  await expect(
+    page.getByText('The request was not understood, so there is nothing to order.'),
+  ).toBeVisible();
+  await expect(page.getByRole('note')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Approve and submit' })).toBeHidden();
 });

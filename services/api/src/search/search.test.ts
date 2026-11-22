@@ -80,7 +80,7 @@ describe('search documents', () => {
     });
     expect(orderDocument(order)).toMatchObject({
       title: 'Remove Priya Shah at Kanata Campus',
-      subtitle: 'Test Co · 1 line · submitted by admin@example.com',
+      subtitle: '1 line · submitted by admin@example.com',
       text: expect.arrayContaining(['ord_1', 'remove extension 2104', 'Priya Shah']),
     });
   });

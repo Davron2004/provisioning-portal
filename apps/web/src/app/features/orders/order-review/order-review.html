@@ -82,7 +82,7 @@
                 >
               </th>
               @for (field of fields; track field) {
-                <td [class.app-numeric]="field === 'extension' || field === 'did'">
+                <td class="field" [class.app-numeric]="field === 'extension' || field === 'did'">
                   <app-diff-value [cell]="row.cells[field]" [action]="row.action" />
                 </td>
               }

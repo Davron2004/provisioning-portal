@@ -117,6 +117,12 @@
     --app-row-fill: color-mix(in srgb, var(--app-status-error-bg) 45%, transparent);
   }
 
+  // A value never breaks inside itself: "(343) 555-" over "0103" misreads, and so does
+  // "Kanata" over "Campus" beside a one-line row. A change still wraps at its arrow.
+  td.field {
+    white-space: nowrap;
+  }
+
   .num {
     width: 48px;
     padding-left: var(--app-space-5);

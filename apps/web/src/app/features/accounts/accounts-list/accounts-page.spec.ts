@@ -136,6 +136,8 @@ describe('AccountsPage', () => {
     expect(host().querySelector('app-empty-state')?.textContent).toContain(
       'No accounts match these filters',
     );
+    // Offered once, in the empty state, not again in the filter bar.
+    expect(host().querySelector('.app-filter-bar button')).toBeNull();
 
     host().querySelector<HTMLButtonElement>('app-empty-state button')!.click();
     await new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 20));

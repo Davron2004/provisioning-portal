@@ -81,7 +81,8 @@ h2 {
   }
 }
 
-.hint {
+.hint,
+.review-note {
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-on-surface-variant);
 }
@@ -108,8 +109,13 @@ h2 {
   gap: var(--app-space-3);
 }
 
-.understood-head,
-.review-head {
+// The request, the operations and the notes quote what was typed and long addresses
+// (new.user.kanatacampus.01@…): they break anywhere rather than run off a phone screen.
+.understood {
+  overflow-wrap: anywhere;
+}
+
+.understood-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -177,12 +183,12 @@ h2 {
   li {
     display: flex;
     gap: var(--app-space-2);
+    min-width: 0;
   }
 }
 
 .notes mat-icon,
 .stale mat-icon,
-.not-yet mat-icon,
 .nothing mat-icon {
   flex: none;
   width: 18px;
@@ -209,7 +215,6 @@ h2 {
 }
 
 .stale,
-.not-yet,
 .nothing {
   display: flex;
   gap: var(--app-space-2);
@@ -218,11 +223,6 @@ h2 {
 
 .stale {
   color: var(--app-status-info-fg);
-}
-
-.not-yet {
-  font-weight: 500;
-  color: var(--mat-sys-on-surface);
 }
 
 .nothing {

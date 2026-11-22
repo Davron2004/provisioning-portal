@@ -53,11 +53,16 @@
         <p class="tile-caption app-numeric">{{ data.numbersAvailable }} available</p>
       </div>
     } @else {
+      <!-- The rows of each tile, each as tall as its text (and the numbers tile's meter),
+           so nothing moves when the figures arrive, in four columns or two. -->
       @for (tile of [1, 2, 3, 4]; track tile) {
         <div class="tile" aria-hidden="true">
-          <app-skeleton width="45%" />
-          <app-skeleton class="tile-value-skeleton" width="35%" height="36px" />
-          <app-skeleton width="60%" />
+          <p class="tile-label skeleton-row"><app-skeleton width="45%" /></p>
+          <p class="tile-value skeleton-row"><app-skeleton width="35%" height="36px" /></p>
+          @if (tile === 4) {
+            <app-utilization-meter class="skeleton-meter" [used]="0" [total]="1" label="" />
+          }
+          <p class="tile-caption skeleton-row"><app-skeleton width="60%" /></p>
         </div>
       }
     }
@@ -83,7 +88,8 @@
                   <span class="order-meta"> {{ order.accountName }} · {{ progress(order) }} </span>
                 </div>
                 <app-status-chip class="order-status" [status]="order.status" />
-                <app-relative-time class="order-time" [value]="order.updatedAt" />
+                <!-- The list is newest first by submission, so that is the time shown. -->
+                <app-relative-time class="order-time" [value]="order.createdAt" />
               </li>
             }
           </ol>

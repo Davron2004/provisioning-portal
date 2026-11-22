@@ -33,7 +33,7 @@ describe('matchSite', () => {
     });
     const twoOttawas = [...sites, site('site_o2', 'Ottawa Annex', '2500', '2599')];
     expect(matchSite('Ottawa', twoOttawas)).toEqual({
-      error: '"Ottawa" could be Ottawa HQ or Ottawa Annex',
+      error: '“Ottawa” could be Ottawa HQ or Ottawa Annex',
     });
   });
 });
@@ -93,8 +93,8 @@ describe('resolveIntent', () => {
     ]);
     expect(notes).toEqual(
       expect.arrayContaining([
-        'Matched "Kanata" to Kanata Campus',
-        'Matched "desk phones" to D200 desk phone',
+        'Matched “Kanata” to Kanata Campus',
+        'Matched “desk phones” to D200 desk phone',
       ]),
     );
   });
@@ -139,8 +139,8 @@ describe('resolveIntent', () => {
       expect.arrayContaining([
         'Extension 2100 is Sofia Beaulieu',
         'No user has extension 2999',
-        'Matched "omar" to Omar Haddad (ext 2102)',
-        'No user matches "Nobody Here"',
+        'Matched “omar” to Omar Haddad (ext 2102)',
+        'No user matches “Nobody Here”',
       ]),
     );
   });
@@ -212,10 +212,7 @@ describe('resolveIntent', () => {
     );
   });
 
-  it('passes unresolved text through as notes', () => {
-    expect(resolveIntent(intent([], ['order pizza']), ctx)).toEqual({
-      draft: null,
-      notes: ['Did not act on: "order pizza"'],
-    });
+  it('leaves unresolved text to the intent instead of repeating it as a note', () => {
+    expect(resolveIntent(intent([], ['order pizza']), ctx)).toEqual({ draft: null, notes: [] });
   });
 });
