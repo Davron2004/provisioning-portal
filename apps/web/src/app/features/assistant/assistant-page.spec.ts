@@ -45,7 +45,7 @@ function anInterpretation(overrides: Partial<InterpretResponse> = {}): Interpret
       summary: { adds: 1, updates: 0, removes: 0 },
       valid: true,
     },
-    notes: ['Matched "Kanata" to Kanata Campus'],
+    notes: ['Matched “Kanata” to Kanata Campus'],
     provider: 'rules',
     model: null,
     ...overrides,
@@ -59,6 +59,14 @@ describe('intent text', () => {
       'Add 20 users at “Kanata”, with voicemail, no device',
     ],
     [
+      { op: 'add_users', site: 'Kanata', count: 2, people: [], voicemail: true, device: 'D200' },
+      'Add 2 users at “Kanata”, with voicemail and “D200”',
+    ],
+    [
+      { op: 'add_users', site: 'Kanata', count: 1, people: [], voicemail: false, device: null },
+      'Add 1 user at “Kanata”, without voicemail or a device',
+    ],
+    [
       {
         op: 'add_users',
         site: 'Ottawa HQ',
@@ -70,7 +78,7 @@ describe('intent text', () => {
         voicemail: false,
         device: 'desk phones',
       },
-      'Add Priya Shah and Tom Lee and 1 more user at “Ottawa HQ”, without voicemail, a “desk phones”',
+      'Add Priya Shah and Tom Lee and 1 more user at “Ottawa HQ”, with “desk phones”, no voicemail',
     ],
     [
       {
@@ -207,11 +215,15 @@ describe('AssistantPage', () => {
     expect(textsOf(host, '.operations li')).toEqual([
       'Add 1 user at “Kanata”, with voicemail, no device',
     ]);
-    expect(textsOf(host, '.notes li')).toEqual(['Matched "Kanata" to Kanata Campus']);
+    expect(textsOf(host, '.notes li')).toEqual(['Matched “Kanata” to Kanata Campus']);
     expect(host.querySelector('.provider')?.textContent).toContain(
       'Rules (offline parser, no language model)',
     );
-    expect(host.querySelector('.not-yet')?.textContent).toContain('Nothing has been provisioned');
+    // Said once, beside the approve button.
+    expect(textsOf(host, 'app-order-review .review-note')).toEqual([
+      'Nothing is provisioned until you approve it.',
+    ]);
+    expect(host.textContent?.match(/provisioned/g)).toHaveLength(1);
     expect(host.querySelector('app-order-review')).not.toBeNull();
     expect(api.requestsTo(`${BASE}/orders`)).toHaveLength(0);
 
@@ -222,7 +234,7 @@ describe('AssistantPage', () => {
     expect(navigate).toHaveBeenCalledWith(['/accounts', 'acc_northwind', 'orders', 'ord_new']);
   });
 
-  it('shows what it could not understand, and says so when nothing is left to order', async () => {
+  it('says once that a request was not understood when nothing in it was', async () => {
     const { host, settle, type, button } = await setUp();
     api.on(
       `${BASE}/assistant/interpret`,
@@ -237,9 +249,41 @@ describe('AssistantPage', () => {
     button('Interpret').click();
     await settle();
 
-    expect(textsOf(host, '.unresolved li')).toEqual(['“order pizza for the team”']);
-    expect(host.querySelector('.nothing')?.textContent).toContain('Nothing to order');
+    // The request is quoted above; it is not repeated as "left out".
+    expect(host.querySelector('.unresolved')).toBeNull();
+    expect(host.textContent?.match(/order pizza for the team/g)).toHaveLength(1);
+    expect(host.querySelector('.nothing')?.textContent).toContain(
+      'The request was not understood, so there is nothing to order.',
+    );
     expect(host.querySelector('app-order-review')).toBeNull();
+  });
+
+  it('lists the parts it left out when it understood the rest', async () => {
+    const { host, settle, type, button } = await setUp();
+    api.on(
+      `${BASE}/assistant/interpret`,
+      anInterpretation({
+        intent: {
+          operations: [
+            {
+              op: 'add_users',
+              site: 'Kanata',
+              count: 1,
+              people: [],
+              voicemail: true,
+              device: null,
+            },
+          ],
+          unresolved: ['and order pizza'],
+        },
+      }),
+    );
+    await type('add a user at Kanata and order pizza');
+    button('Interpret').click();
+    await settle();
+
+    expect(textsOf(host, '.unresolved li')).toEqual(['“and order pizza”']);
+    expect(host.querySelector('app-order-review')).not.toBeNull();
   });
 
   it('explains when the assistant is unavailable and points to the order builder', async () => {

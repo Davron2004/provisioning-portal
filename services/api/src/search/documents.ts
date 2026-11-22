@@ -99,7 +99,8 @@ export function orderDocument(order: Order): SearchDocument {
     accountId: order.accountId,
     accountName: order.accountName,
     title: order.title,
-    subtitle: `${order.accountName} · ${lines} · submitted by ${order.submittedBy}`,
+    // The app shows the account name beside every hit, so the subtitle leaves it out.
+    subtitle: `${lines} · submitted by ${order.submittedBy}`,
     status: order.status,
     // The people an order touches, so searching a name also finds its orders.
     text: [

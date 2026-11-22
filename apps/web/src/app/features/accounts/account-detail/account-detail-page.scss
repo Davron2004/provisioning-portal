@@ -68,6 +68,30 @@
   padding-top: var(--app-space-1);
 }
 
+// Loading cells: each placeholder row takes its text's line height.
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  min-height: 1lh;
+}
+
+.skeleton-meter {
+  display: grid;
+  flex: 1;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+
+  app-utilization-meter {
+    visibility: hidden;
+  }
+
+  app-skeleton {
+    align-self: start;
+  }
+}
+
 .tab-count {
   margin-left: var(--app-space-2);
   padding: 0 var(--app-space-2);
@@ -128,7 +152,9 @@
     padding-inline: var(--app-space-3);
   }
 
-  .tab-count {
+  // Counts loading too: a placeholder would widen the tabs, and they would scroll.
+  .tab-count,
+  .tab-count.pending {
     display: none;
   }
 }

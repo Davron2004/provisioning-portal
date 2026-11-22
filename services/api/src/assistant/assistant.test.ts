@@ -131,16 +131,13 @@ describe('AssistantService', () => {
       valid: true,
       summary: { adds: 2, updates: 0, removes: 0 },
     });
-    expect(response.notes).toContain('Matched "Kanata" to Kanata Campus');
+    expect(response.notes).toContain('Matched “Kanata” to Kanata Campus');
   });
 
-  it('returns notes and no preview when nothing maps to an order', async () => {
+  it('returns no draft or preview when nothing maps to an order, with the text left over', async () => {
     const response = await service().interpret('acc_test', 'order pizza');
-    expect(response).toMatchObject({
-      draft: null,
-      preview: null,
-      notes: ['Did not act on: "order pizza"'],
-    });
+    expect(response).toMatchObject({ draft: null, preview: null, notes: [] });
+    expect(response.intent.unresolved).toEqual(['order pizza']);
   });
 
   it('explains a draft that cannot be previewed', async () => {

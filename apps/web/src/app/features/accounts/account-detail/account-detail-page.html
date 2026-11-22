@@ -70,10 +70,23 @@
         <dd>{{ customerSince() }}</dd>
       </div>
     } @else {
+      <!-- The same cells as the loaded figures, each row as tall as its text (and the
+           numbers cell as tall as its meter), so nothing moves when they arrive. -->
       @for (stat of [1, 2, 3, 4]; track stat) {
-        <div class="stat" aria-hidden="true">
-          <app-skeleton width="64px" height="12px" />
-          <app-skeleton width="96px" height="24px" />
+        <div class="stat" [class.stat-wide]="stat === 3" aria-hidden="true">
+          <dt class="skeleton-row"><app-skeleton width="64px" height="12px" /></dt>
+          <dd class="skeleton-row">
+            @if (stat === 3) {
+              <!-- An invisible meter keeps the cell its loaded height; a bone stands in
+                   for its bar. -->
+              <span class="skeleton-meter">
+                <app-utilization-meter [used]="0" [total]="1" label="" />
+                <app-skeleton height="8px" />
+              </span>
+            } @else {
+              <app-skeleton width="96px" height="24px" />
+            }
+          </dd>
         </div>
       }
     }

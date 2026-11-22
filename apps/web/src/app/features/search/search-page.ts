@@ -119,13 +119,20 @@ export class SearchPage {
   private readonly retries = new Subject<Query>();
 
   protected readonly hits = computed(() => this.state()?.shown?.hits ?? []);
-  /** Hits by entity, groups in the order of their best hit (the API ranks across entities). */
+  /**
+   * Hits by entity, groups in the order of their best hit (the API ranks across entities).
+   * `total` is how many of that kind match, when the page shows fewer ("1 of 38").
+   */
   protected readonly grouped = computed(() => {
     const groups = new Map<SearchEntity, SearchHit[]>();
     for (const hit of this.hits()) {
       groups.set(hit.entity, [...(groups.get(hit.entity) ?? []), hit]);
     }
-    return [...groups].map(([entity, hits]) => ({ entity, hits }));
+    const totals = this.state()?.shown?.totals;
+    return [...groups].map(([entity, hits]) => {
+      const total = totals?.[entity] ?? hits.length;
+      return { entity, hits, total: total > hits.length ? total : null };
+    });
   });
   /** Matches per entity (exact, from the API, not just the hits on this page). */
   protected readonly counts = computed(() => this.state()?.shown?.totals);

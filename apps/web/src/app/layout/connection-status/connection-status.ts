@@ -12,7 +12,16 @@ const COPY: Record<ConnectionState, { label: string; detail: string }> = {
   offline: { label: 'Offline', detail: 'Live order updates are off.' },
 };
 
-/** Small "Live" / "Reconnecting" indicator for the realtime connection. */
+/** The longest label: an invisible copy of the pill reserves its width. */
+const WIDEST_LABEL = Object.values(COPY)
+  .map((copy) => copy.label)
+  .reduce((widest, label) => (label.length > widest.length ? label : widest));
+
+/**
+ * Small "Live" / "Reconnecting" indicator for the realtime connection. It always takes
+ * the width of its longest label, with the pill at the end, so going from "Connecting"
+ * to "Live" does not move anything else in the toolbar.
+ */
 @Component({
   selector: 'app-connection-status',
   imports: [MatTooltipModule],
@@ -23,6 +32,10 @@ const COPY: Record<ConnectionState, { label: string; detail: string }> = {
     '[class.compact]': 'compact()',
   },
   template: `
+    <span class="pill sizer" aria-hidden="true">
+      <span class="dot"></span>
+      <span class="label">{{ widestLabel }}</span>
+    </span>
     <span class="pill" tabindex="0" [matTooltip]="copy().detail">
       <span class="dot" aria-hidden="true"></span>
       <span class="label">{{ copy().label }}</span>
@@ -35,4 +48,5 @@ export class ConnectionStatus {
   /** Dot only (the label stays available to screen readers). */
   readonly compact = input(false);
   protected readonly copy = computed(() => COPY[this.realtime.state()]);
+  protected readonly widestLabel = WIDEST_LABEL;
 }

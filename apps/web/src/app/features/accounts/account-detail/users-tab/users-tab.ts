@@ -83,6 +83,14 @@ export class UsersTab {
   protected readonly filtered = computed(() => !!this.siteId() || !!this.search.text().trim());
   /** The text filter the loaded rows were fetched with (follows the URL, not the box). */
   protected readonly searching = computed(() => !!this.q()?.trim());
+  /** Nothing matches the search: the empty state offers "Clear filters", so the bar does not. */
+  protected readonly noMatches = computed(
+    () =>
+      this.searching() &&
+      !this.users.error() &&
+      !this.users.isFirstLoad() &&
+      this.rows().length === 0,
+  );
   protected readonly columns = computed(() =>
     [
       'name',

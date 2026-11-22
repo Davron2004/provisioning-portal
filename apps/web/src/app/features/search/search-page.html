@@ -92,7 +92,12 @@
         <h2 [id]="'group-' + group.entity">
           <mat-icon [svgIcon]="groups[group.entity].icon" aria-hidden="true" />
           {{ groups[group.entity].label }}
-          <span class="count app-numeric">{{ group.hits.length }}</span>
+          <span class="count app-numeric">
+            {{ group.hits.length }}
+            @if (group.total) {
+              of {{ group.total }}
+            }
+          </span>
         </h2>
         <ul>
           @for (hit of group.hits; track hit.entity + hit.id) {

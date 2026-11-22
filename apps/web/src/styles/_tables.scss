@@ -53,6 +53,12 @@
     max-width: 400px;
   }
 
+  // Filter chips take the fields' 44px row, so every list starts at the same height
+  // (Material spaces them to 48px; their touch targets stay 48px, drawn outside).
+  .mdc-evolution-chip-set .mdc-evolution-chip {
+    margin-block: 6px;
+  }
+
   @media (max-width: 599.98px) {
     .mat-mdc-form-field,
     .app-filter-search {
@@ -249,11 +255,10 @@
   gap: var(--app-space-3) var(--app-space-4);
   margin: 0;
 
+  // Labelled like the figures on the account page: sentence case, not small caps.
   dt {
-    font: var(--mat-sys-label-small);
+    font: var(--mat-sys-label-medium);
     color: var(--mat-sys-on-surface-variant);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
   }
 
   dd {

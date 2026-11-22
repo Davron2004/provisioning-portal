@@ -54,8 +54,19 @@
   color: var(--mat-sys-on-surface);
 }
 
-.tile-value-skeleton {
-  margin-block: 6px;
+// Loading tiles: each placeholder row takes its text's line height.
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  min-height: 1lh;
+
+  app-skeleton {
+    flex: 1;
+  }
+}
+
+.skeleton-meter {
+  visibility: hidden;
 }
 
 .tile-caption {

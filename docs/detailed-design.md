@@ -512,7 +512,9 @@ preview the person rejects.
   `new.user.<site>.NN@<account domain>`, skipping addresses already taken.
   Extensions and numbers are allocated by the normal preview.
 - More than 100 resulting lines returns no draft and a note to split the
-  request; parts of the text that are not orders come back as notes.
+  request. Parts of the text that are not orders stay in the intent's
+  `unresolved` list and are not repeated as notes. Notes quote the person's
+  words in typographic quotes (“Kanata”).
 
 **Providers** (`ASSISTANT_PROVIDER`, behind `IntentProvider`):
 
@@ -894,7 +896,9 @@ Errors disable the submit; warnings do not. Error findings, and the issues of a
 `422 validation_failed`, are also put back on the form field they name, so
 "Back to edit" lands on what to fix. `OrderSubmission` generates one
 idempotency key per preview and reuses it for every attempt to submit that
-preview, so a retried submit can never create a second order.
+preview, so a retried submit can never create a second order. A value in the
+diff never breaks inside itself ("(343) 555-" over "0103" misreads); a change
+wraps at its arrow.
 
 **Follow.** The order page fetches the order once and then merges pushes for
 its account; the version with the later `updatedAt` wins, so a slow fetch
@@ -905,7 +909,9 @@ the server; if the API refuses (`409`), the page puts the order back and
 re-reads it. Status changes (not every step) are announced through a polite
 live region; the step indicator pulses only when reduced motion is off.
 `/orders` overlays the all-accounts feed (`'*'`) on the newest-first list with
-`mergeLiveOrders`, like the account's orders tab.
+`mergeLiveOrders`, like the account's orders tab. The order page's breadcrumb
+is where the order lives (Accounts › account › order), whichever list opened
+it, so it agrees with the Accounts item lit in the navigation.
 
 ### Assistant page
 
@@ -913,12 +919,15 @@ live region; the step indicator pulses only when reduced motion is off.
 request cancels the one in flight) and shows, in order: what was asked, the
 operations as plain sentences (site and device names quoted as written, since
 the resolution notes say what each matched), the notes, anything left
-unresolved, and who interpreted it ("Rules (offline parser, no language
-model)" or "Claude Opus 5.5 via Amazon Bedrock"). The preview renders in the
-same `OrderReview` as a manual order, under a line saying nothing has been
-provisioned. "Approve and submit" posts it with `source: "assistant"` and the
-prompt; "Edit in order builder" hands the draft to the builder
-(`OrderDraftHandoff`), which keeps the prompt with the order. A
+unresolved (when nothing was understood, one "nothing to order" message says so
+instead of repeating the request), and who interpreted it ("Rules (offline
+parser, no language model)" or "Claude Opus 5.5 via Amazon Bedrock"). A sentence
+reads like "Add 3 users at “Kanata”, with voicemail and “desk phones”". The
+preview renders in the same `OrderReview` as a manual order, with "Nothing is
+provisioned until you approve it." in its footer, said once on the page.
+"Approve and submit" posts it with `source: "assistant"` and the prompt; "Edit
+in order builder" hands the draft to the builder (`OrderDraftHandoff`), which
+keeps the prompt with the order. A
 `502 assistant_unavailable` gets its own error state with a link to build the
 order by hand. Example requests are generated from the selected account's own
 sites and users, so each one resolves.
@@ -929,7 +938,9 @@ sites and users, so each one resolves.
 (`SEARCH_DEBOUNCE_MS`), a filter or a link applies at once, and `switchMap`
 cancels the request in flight when a newer query starts. Results are grouped by
 entity in the order of each group's best hit, since the API ranks across
-entities. The filter chips show `SearchResponse.totals`: exact per-entity counts
+entities; a group that shows only part of its matches says so ("Users 1 of 38").
+Each hit's subtitle is followed by its account name, so the order subtitle
+leaves the account out. The filter chips show `SearchResponse.totals`: exact per-entity counts
 from an OpenSearch `terms` aggregation on `entity`, which respects the query and
 the account filter but not the entity filter (that one is a `post_filter`, so it
 narrows the hits only). One request per query, filtered or not, up to 50 hits.

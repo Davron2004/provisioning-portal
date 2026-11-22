@@ -51,7 +51,8 @@ export class AssistantService {
         notes.push(...issues.map((i) => `Cannot preview: ${i.message}`));
       }
     }
-    if (!draft && notes.length === 0) notes.push('Nothing in the request maps to an order');
+    // No draft needs no note of its own: the app says there is nothing to order, and
+    // `intent.unresolved` holds whatever text was not understood.
     return { intent, draft, preview, notes, provider: provider.name, model: provider.model };
   }
 }

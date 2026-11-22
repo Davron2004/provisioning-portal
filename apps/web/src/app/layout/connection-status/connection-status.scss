@@ -1,7 +1,7 @@
 :host {
   --_dot: var(--app-status-neutral-accent);
 
-  display: inline-flex;
+  display: inline-grid;
 }
 
 :host([data-state='live']) {
@@ -13,6 +13,8 @@
 }
 
 .pill {
+  grid-area: 1 / 1;
+  justify-self: end;
   display: inline-flex;
   align-items: center;
   gap: var(--app-space-2);
@@ -24,6 +26,11 @@
   font: var(--mat-sys-label-medium);
   cursor: default;
   white-space: nowrap;
+}
+
+// Reserves the width of the longest label; never seen or announced.
+.sizer {
+  visibility: hidden;
 }
 
 .dot {

@@ -54,7 +54,14 @@ import { toApiProblem } from '../../../core/api/api-problem';
       justify-content: space-between;
       gap: var(--app-space-3);
       min-block-size: 56px;
-      padding: var(--app-space-2) var(--app-space-4);
+      /* The count lines up with the text in the rows above (cell or card padding plus
+         the 1px border of the table card or the cards). */
+      padding: var(--app-space-2) calc(var(--app-space-5) + 1px);
+    }
+    @media (max-width: 599.98px) {
+      :host {
+        padding-inline: calc(var(--app-space-4) + 1px);
+      }
     }
     .count {
       font: var(--mat-sys-body-small);

@@ -104,8 +104,10 @@ export class OrderDetailPage {
   protected readonly canRetry = computed(() => this.order()?.status === 'failed');
   protected readonly breadcrumbs = computed<Breadcrumb[]>(() => {
     const order = this.order();
+    // Where the order lives (its URL, and the Accounts item lit in the navigation),
+    // whichever list it was opened from.
     return [
-      { label: 'Orders', link: '/orders' },
+      { label: 'Accounts', link: '/accounts' },
       {
         label: order?.accountName ?? 'Account',
         link: ['/accounts', this.accountId(), 'orders'],

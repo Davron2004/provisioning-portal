@@ -23,8 +23,17 @@ h2 {
   color: var(--mat-sys-on-surface-variant);
 }
 
+// Facts separated by dots. Each fact draws the dot before it in the gutter to its left;
+// the list is shifted left by one gutter and clipped there, so the dot of a fact that
+// starts a line is cut off and no line begins with "·".
 .facts {
+  --_gutter: calc(2 * var(--app-space-2) + 4px);
+
+  display: flex;
+  flex-wrap: wrap;
   min-width: 0;
+  margin-left: calc(-1 * var(--_gutter));
+  clip-path: inset(0 0 0 var(--_gutter));
   overflow-wrap: anywhere;
 
   mat-icon {
@@ -35,9 +44,19 @@ h2 {
   }
 }
 
-.sep {
-  margin: 0 var(--app-space-2);
-  color: var(--mat-sys-outline);
+.fact {
+  position: relative;
+  max-width: 100%;
+  padding-left: var(--_gutter);
+
+  &::before {
+    content: '·' / '';
+    position: absolute;
+    left: 0;
+    width: var(--_gutter);
+    color: var(--mat-sys-outline);
+    text-align: center;
+  }
 }
 
 .prompt {
@@ -185,10 +204,11 @@ h2 {
   border-color: var(--app-status-error-accent);
 }
 
+// Placeholders as tall as the sections they stand in for, spaced like them.
 .loading {
   display: flex;
   flex-direction: column;
-  gap: var(--app-space-4);
+  gap: var(--app-space-6);
 }
 
 @keyframes ping {

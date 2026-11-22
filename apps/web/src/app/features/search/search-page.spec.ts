@@ -149,8 +149,8 @@ describe('SearchPage', () => {
     );
     await flush();
 
-    expect(textsOf(host, '.group h2')).toEqual(['Numbers 1', 'Users 2']);
-    // The chips count every match, not just the page of hits.
+    // A group says when it shows only the best of its kind; the chips count every match.
+    expect(textsOf(host, '.group h2')).toEqual(['Numbers 1 of 36', 'Users 2 of 120']);
     expect(textsOf(host, 'mat-chip-option')).toEqual([
       'All 156',
       'Users 120',

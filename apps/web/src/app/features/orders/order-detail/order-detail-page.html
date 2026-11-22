@@ -5,16 +5,20 @@
     <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
     <div class="meta">
       <app-status-chip [status]="o.status" />
+      <!-- Each fact wraps as a whole, and the dot between two facts on different lines
+           is hidden (see .facts), so a line never starts or breaks inside "Submitted by". -->
       <p class="facts">
-        <mat-icon
-          [svgIcon]="o.source === 'assistant' ? 'wand_stars' : 'person'"
-          aria-hidden="true"
-        />
-        {{ sourceLabel(o.source) }}<span class="sep" aria-hidden="true">·</span>Submitted by
-        {{ o.submittedBy }}<span class="sep" aria-hidden="true">·</span
-        ><app-relative-time [value]="o.createdAt" />
+        <span class="fact">
+          <mat-icon
+            [svgIcon]="o.source === 'assistant' ? 'wand_stars' : 'person'"
+            aria-hidden="true"
+          />
+          {{ sourceLabel(o.source) }}
+        </span>
+        <span class="fact">Submitted by {{ o.submittedBy }}</span>
+        <app-relative-time class="fact" [value]="o.createdAt" />
         @if (duration(); as took) {
-          <span class="sep" aria-hidden="true">·</span><span class="app-numeric">{{ took }}</span>
+          <span class="fact app-numeric">{{ took }}</span>
         }
       </p>
     </div>
@@ -139,11 +143,17 @@
     (retry)="resource.reload()"
   />
 } @else {
+  <!-- Shaped like the loaded page (status and facts line, progress panel, lines), so it
+       does not jump when the order arrives. -->
   <app-page-header title="Order" [loading]="true">
     <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
+    <div class="meta">
+      <app-skeleton width="min(480px, 80vw)" height="24px" />
+    </div>
   </app-page-header>
   <div class="loading" aria-busy="true">
-    <app-skeleton height="148px" />
+    <!-- The progress panel: four steps in a row, or stacked on a phone. -->
+    <app-skeleton [height]="handset() ? '280px' : '218px'" />
     <app-skeleton height="240px" />
   </div>
 }

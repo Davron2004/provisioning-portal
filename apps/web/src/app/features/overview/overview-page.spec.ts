@@ -59,6 +59,24 @@ describe('OverviewPage', () => {
     expect(host.querySelector('.order app-status-chip')?.textContent?.trim()).toBe('Failed');
   });
 
+  it('shows when each recent order was submitted, the order they are listed in', async () => {
+    api.on(
+      '/overview',
+      anOverview({
+        recentOrders: [
+          anOrderSummary({
+            createdAt: '2026-11-21T14:00:00.000Z',
+            updatedAt: '2026-11-21T14:30:00.000Z',
+          }),
+        ],
+      }),
+    );
+    const { host } = await render();
+    expect(host.querySelector('.order time')?.getAttribute('datetime')).toBe(
+      '2026-11-21T14:00:00.000Z',
+    );
+  });
+
   it('says so when there are no orders yet', async () => {
     api.on('/overview', anOverview({ recentOrders: [] }));
     const { host } = await render();

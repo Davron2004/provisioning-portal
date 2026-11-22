@@ -24,6 +24,9 @@ export interface Resolution {
   notes: string[];
 }
 
+/** The person's own words inside a note, in typographic quotes like the rest of the UI. */
+const quote = (text: string) => `“${text}”`;
+
 const fold = (s: string) =>
   s
     .normalize('NFD')
@@ -74,17 +77,17 @@ export function matchSite(
   const exact = sites.find((s) => fold(s.name) === fold(query));
   if (exact) return { site: exact };
   const q = tokens(query);
-  if (q.length === 0) return { error: `"${query}" does not name a site` };
+  if (q.length === 0) return { error: `${quote(query)} does not name a site` };
   const candidates = sites.filter((s) => {
     const words = tokens(s.name);
     return q.every((t) => words.some((w) => tokenMatches(t, w)));
   });
   if (candidates.length === 1) return { site: candidates[0]! };
   if (candidates.length > 1) {
-    return { error: `"${query}" could be ${candidates.map((s) => s.name).join(' or ')}` };
+    return { error: `${quote(query)} could be ${candidates.map((s) => s.name).join(' or ')}` };
   }
   return {
-    error: `No site matches "${query}" (sites: ${sites.map((s) => s.name).join(', ')})`,
+    error: `No site matches ${quote(query)} (sites: ${sites.map((s) => s.name).join(', ')})`,
   };
 }
 
@@ -118,7 +121,8 @@ export function resolveIntent(intent: OrderIntent, ctx: AccountContext): Resolut
     if (op.op === 'add_users') lines.push(...resolveAdd(op, ctx, domain, takenEmails, notes));
     else lines.push(...resolveChange(op, ctx, notes));
   }
-  for (const text of intent.unresolved) notes.push(`Did not act on: "${text}"`);
+  // Text that was not understood is not repeated as a note: the response carries it in
+  // `intent.unresolved`, and the app lists it once.
 
   if (lines.length > MAX_ORDER_LINES) {
     notes.push(
@@ -142,16 +146,16 @@ function resolveAdd(
     return [];
   }
   const { site } = match;
-  if (fold(op.site) !== fold(site.name)) notes.push(`Matched "${op.site}" to ${site.name}`);
+  if (fold(op.site) !== fold(site.name)) notes.push(`Matched ${quote(op.site)} to ${site.name}`);
 
   let deviceModel: string | null = null;
   if (op.device) {
     const device = matchDevice(op.device);
     if (device === undefined) {
-      notes.push(`Did not recognise the device "${op.device}"; the new users get no device`);
+      notes.push(`Did not recognise the device ${quote(op.device)}; the new users get no device`);
     } else {
       deviceModel = device;
-      notes.push(`Matched "${op.device}" to ${deviceName(device)}`);
+      notes.push(`Matched ${quote(op.device)} to ${deviceName(device)}`);
     }
   }
 
@@ -189,7 +193,7 @@ function resolveAdd(
       });
     }
     notes.push(
-      `${unnamed} unnamed seat${unnamed === 1 ? '' : 's'} at ${site.name} get placeholder names ("New User 01") and addresses like new.user.${slug}.01@${domain}`,
+      `${unnamed} unnamed seat${unnamed === 1 ? '' : 's'} at ${site.name} get placeholder names (“New User 01”) and addresses like new.user.${slug}.01@${domain}`,
     );
   }
   notes.push(
@@ -221,9 +225,11 @@ function resolveChange(
   if (op.set.device !== null) {
     deviceModel = matchDevice(op.set.device);
     if (deviceModel === undefined) {
-      notes.push(`Did not recognise the device "${op.set.device}"; devices are left as they are`);
+      notes.push(
+        `Did not recognise the device ${quote(op.set.device)}; devices are left as they are`,
+      );
     } else {
-      notes.push(`Matched "${op.set.device}" to ${deviceName(deviceModel)}`);
+      notes.push(`Matched ${quote(op.set.device)} to ${deviceName(deviceModel)}`);
     }
   }
   const lines: DraftLine[] = [];
@@ -255,7 +261,7 @@ function selectUsers(target: TargetSelector, ctx: AccountContext, notes: string[
       return [];
     }
     if (fold(target.site) !== fold(match.site.name)) {
-      notes.push(`Matched "${target.site}" to ${match.site.name}`);
+      notes.push(`Matched ${quote(target.site)} to ${match.site.name}`);
     }
     pool = pool.filter((u) => u.siteId === match.site.id);
   }
@@ -289,14 +295,16 @@ function selectUsers(target: TargetSelector, ctx: AccountContext, notes: string[
     if (matches.length === 1) {
       selected.set(matches[0]!.id, matches[0]!);
       if (fold(name) !== fold(fullName(matches[0]!))) {
-        notes.push(`Matched "${name}" to ${fullName(matches[0]!)} (ext ${matches[0]!.extension})`);
+        notes.push(
+          `Matched ${quote(name)} to ${fullName(matches[0]!)} (ext ${matches[0]!.extension})`,
+        );
       }
     } else if (matches.length > 1) {
       notes.push(
-        `"${name}" could be ${matches.map((u) => `${fullName(u)} (ext ${u.extension})`).join(' or ')}; use the extension`,
+        `${quote(name)} could be ${matches.map((u) => `${fullName(u)} (ext ${u.extension})`).join(' or ')}; use the extension`,
       );
     } else {
-      notes.push(`No user matches "${name}"`);
+      notes.push(`No user matches ${quote(name)}`);
     }
   }
   return [...selected.values()];
