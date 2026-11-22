@@ -951,4 +951,95 @@ shown as `(613) 555-0142`.
 
 ## Trade-offs
 
-TODO (architecture lane).
+The choices above, with what each one costs. Most were made for a small
+system (a handful of operators, a few hundred users per account) that should
+still be shaped like a production one.
+
+**One DynamoDB table instead of one per entity.** Accounts, sites, users,
+numbers and orders share a table and an account's items share a partition, so
+a user, its guard items, its number and the account counters change in one
+transaction, and one stream feeds both search and live updates. The cost is
+that every access pattern has to be designed up front (the table under "Access
+patterns") and ad hoc queries are not possible; anything that does not fit a
+key goes to OpenSearch. Several tables would make the schema easier to read
+but would lose the single transaction and the single stream.
+
+**OpenSearch fed from the stream instead of querying DynamoDB.** Free-text,
+prefix and digit search across entities is not something DynamoDB can do. The
+request path never writes to the index: `search-indexer` follows the table
+stream, so a write is never slower or lost because search is down, and the
+index can always be rebuilt from the table (`reindexAll()`). The cost is
+eventual consistency: a new user appears in search a moment after the write,
+not with it. Lists, counters and the order pages read DynamoDB, so they never
+show stale data because of the index.
+
+**A provisioned OpenSearch domain instead of OpenSearch Serverless.** One
+`t3.small.search` node costs about $28-30 a month and is the bulk of the bill
+(`docs/deployment.md`); a serverless collection has a much higher minimum
+charge. The cost is a single node with no zone awareness or standby, which is
+acceptable for a demo and would change for production. The client also speaks
+`aoss` (`OPENSEARCH_SERVICE`), so moving later is configuration plus
+infrastructure, not code. The domain has a public, IAM-protected endpoint
+rather than a VPC, to avoid a NAT gateway (see "Search" under
+"Infrastructure").
+
+**Step Functions instead of a queue and a worker.** An order is a short
+workflow: validate and claim, provision up to five lines in parallel with
+retries, then finalize. A Standard state machine gives retries with backoff,
+a per-line Catch, bounded concurrency and an execution history for each order
+without code for any of it, and the definition lives in TypeScript
+(`orderWorkflowDefinition()`) so the local runner shares it. An SQS queue with
+a Lambda consumer would be cheaper per order but would need hand-written
+retry bookkeeping, fan-out and "all lines done" detection. The cost is a
+second runtime to emulate locally: the harness runs a stand-in that follows
+the same definition but has no Lambda service retries or timeouts.
+
+**The model returns an intent, never an order.** The assistant's output is an
+`OrderIntent` that deterministic code resolves and the normal preview
+validates; the person approves the result. A wrong or manipulated model
+answer can at worst produce a preview that gets rejected, and the assistant
+cannot do anything a manual order cannot. The cost is flexibility: requests
+outside what `OrderIntent` can express are returned as notes, not attempted.
+The `rules` provider exists so local development, CI and E2E need no model
+credentials, at the price of understanding only common phrasings.
+
+**Live updates over an API Gateway WebSocket API.** Pushes come from the table
+stream, so every change to an order reaches the browser no matter which
+Lambda made it, and nothing in the workflow knows about clients. API Gateway
+holds the connections, so there is no server to run. The costs: connection
+and subscription items have to be stored and cleaned up, browsers cannot send
+headers on the handshake so the token goes in the query string, connections
+close after two hours or ten idle minutes, and delivery is best effort. The
+app handles the last two by pinging, re-fetching after a reconnect and polling
+a running order while the socket is down. Polling alone would have been
+simpler but slower and chattier.
+
+**One REST Lambda instead of one per route.** Covered under "One REST
+Lambda": shared code and a single cold start, in exchange for coarser IAM and
+metrics from logs rather than per function.
+
+**One CDK stack per stage.** The web app's CSP and the APIs' CORS refer to each
+other, and everything is deployed and torn down together, so splitting would
+add cross-stack exports without making any part independently deployable.
+
+**A simulated provisioner.** There is no carrier, call server or device
+configuration service behind the project, so `SimulatedProvisioner` waits and
+fails the way a real one might, with deterministic `+fail` and `+flaky`
+addresses for tests and demos. Everything around it (claims, retries, failure
+handling, retry of failed lines, live progress) is real code; a real backend
+would implement the same `Provisioner` interface.
+
+**Validation that loads the account.** Order rules run as pure functions over
+an account's users and numbers, which keeps them easy to test and lets the
+preview and `POST /orders` share them. It is fine at a few thousand users per
+account; beyond that the guard items would be read directly. Concurrency is
+not left to this snapshot: the conditional writes in ValidateOrder are what
+stop two orders from taking the same extension or number.
+
+**Local stand-ins instead of LocalStack or a cloud dev account.** The harness
+runs the real handlers against DynamoDB Local, OpenSearch and small stand-ins
+for API Gateway, Cognito and Step Functions. It starts in seconds, needs no
+AWS account, and is what CI and E2E run against. The cost is that the stand-ins
+are only as faithful as the table under "Local development harness" says, and
+IAM, the real authorizers and Bedrock are only checked by the template tests
+and on deploy.
