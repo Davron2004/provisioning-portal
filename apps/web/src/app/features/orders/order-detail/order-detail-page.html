@@ -5,21 +5,20 @@
     <app-breadcrumbs breadcrumbs [items]="breadcrumbs()" />
     <div class="meta">
       <app-status-chip [status]="o.status" />
-      <!-- Each fact wraps as a whole, so a line never breaks inside "Submitted by …". -->
+      <!-- Each fact wraps as a whole, and the dot between two facts on different lines
+           is hidden (see .facts), so a line never starts or breaks inside "Submitted by". -->
       <p class="facts">
         <span class="fact">
           <mat-icon
             [svgIcon]="o.source === 'assistant' ? 'wand_stars' : 'person'"
             aria-hidden="true"
           />
-          {{ sourceLabel(o.source) }}</span
-        ><span class="sep" aria-hidden="true">·</span
-        ><span class="fact">Submitted by {{ o.submittedBy }}</span
-        ><span class="sep" aria-hidden="true">·</span
-        ><app-relative-time class="fact" [value]="o.createdAt" />
+          {{ sourceLabel(o.source) }}
+        </span>
+        <span class="fact">Submitted by {{ o.submittedBy }}</span>
+        <app-relative-time class="fact" [value]="o.createdAt" />
         @if (duration(); as took) {
-          <span class="sep" aria-hidden="true">·</span
-          ><span class="fact app-numeric">{{ took }}</span>
+          <span class="fact app-numeric">{{ took }}</span>
         }
       </p>
     </div>

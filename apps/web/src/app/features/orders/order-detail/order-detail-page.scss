@@ -23,8 +23,17 @@ h2 {
   color: var(--mat-sys-on-surface-variant);
 }
 
+// Facts separated by dots. Each fact draws the dot before it in the gutter to its left;
+// the list is shifted left by one gutter and clipped there, so the dot of a fact that
+// starts a line is cut off and no line begins with "·".
 .facts {
+  --_gutter: calc(2 * var(--app-space-2) + 4px);
+
+  display: flex;
+  flex-wrap: wrap;
   min-width: 0;
+  margin-left: calc(-1 * var(--_gutter));
+  clip-path: inset(0 0 0 var(--_gutter));
   overflow-wrap: anywhere;
 
   mat-icon {
@@ -35,16 +44,19 @@ h2 {
   }
 }
 
-// Inline blocks: a fact moves to the next line whole; one longer than the line (a long
-// address on a phone) still breaks anywhere inside.
 .fact {
-  display: inline-block;
+  position: relative;
   max-width: 100%;
-}
+  padding-left: var(--_gutter);
 
-.sep {
-  margin: 0 var(--app-space-2);
-  color: var(--mat-sys-outline);
+  &::before {
+    content: '·' / '';
+    position: absolute;
+    left: 0;
+    width: var(--_gutter);
+    color: var(--mat-sys-outline);
+    text-align: center;
+  }
 }
 
 .prompt {
