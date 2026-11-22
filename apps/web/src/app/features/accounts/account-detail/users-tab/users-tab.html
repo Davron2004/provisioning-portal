@@ -32,11 +32,7 @@
 @if (users.error(); as error) {
   <app-error-state heading="Could not load users" [error]="error" (retry)="users.retry()" />
 } @else if (users.isFirstLoad()) {
-  <app-table-skeleton
-    class="app-table-card"
-    label="Loading users"
-    [columns]="[3, 1.4, 0.8, 1.4, 0.8, 1.4, 1.2]"
-  />
+  <app-table-skeleton label="Loading users" [columns]="[3, 1.4, 0.8, 1.4, 0.8, 1.4, 1.2]" />
 } @else if (users.items().length === 0 && !searching()) {
   <app-empty-state
     icon="group"

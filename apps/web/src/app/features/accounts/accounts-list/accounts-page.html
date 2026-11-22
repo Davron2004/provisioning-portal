@@ -44,11 +44,7 @@
   </div>
 
   @if (accounts.isFirstLoad()) {
-    <app-table-skeleton
-      class="app-table-card"
-      label="Loading accounts"
-      [columns]="[4, 1.4, 1.4, 1, 1, 2]"
-    />
+    <app-table-skeleton label="Loading accounts" [columns]="[4, 1.4, 1.4, 1, 1, 2]" />
   } @else if (accounts.items().length === 0) {
     <app-empty-state
       icon="domain"

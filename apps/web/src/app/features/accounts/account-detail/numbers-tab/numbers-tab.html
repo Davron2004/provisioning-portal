@@ -24,11 +24,7 @@
 @if (numbers.error(); as error) {
   <app-error-state heading="Could not load numbers" [error]="error" (retry)="numbers.retry()" />
 } @else if (numbers.isFirstLoad()) {
-  <app-table-skeleton
-    class="app-table-card"
-    label="Loading numbers"
-    [columns]="[1.4, 1.4, 1.2, 1.6, 1]"
-  />
+  <app-table-skeleton label="Loading numbers" [columns]="[1.4, 1.4, 1.2, 1.6, 1]" />
 } @else if (numbers.items().length === 0) {
   @if (filtered()) {
     <app-empty-state

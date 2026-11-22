@@ -15,11 +15,7 @@
 @if (orders.error(); as error) {
   <app-error-state heading="Could not load orders" [error]="error" (retry)="orders.retry()" />
 } @else if (orders.isFirstLoad()) {
-  <app-table-skeleton
-    class="app-table-card"
-    label="Loading orders"
-    [columns]="[3, 1.1, 1, 0.9, 1.6, 0.9]"
-  />
+  <app-table-skeleton label="Loading orders" [columns]="[3, 1.1, 1, 0.9, 1.6, 0.9]" />
 } @else if (rows().length === 0) {
   @if (statusFilter()) {
     <app-empty-state
